@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/auth/presentation/view/widgets/role_card.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -16,10 +17,10 @@ class RoleSelectionScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppSize.xxxlHeight,
-              Text('I want to...', style: AppTextStyling.title_30M),
+              Text('role.selection.title'.tr, style: AppTextStyling.title_30M),
               AppSize.sHeight,
               Text(
-                'Choose how you\'d like to help your community',
+                'role.selection.subtitle'.tr,
                 style: AppTextStyling.body_12S,
               ),
               AppSize.xxxlHeight,
@@ -28,8 +29,8 @@ class RoleSelectionScreen extends StatelessWidget {
                 'request_help',
                 Icons.favorite,
                 Colors.orange[700]!,
-                'Request Help',
-                'Submit a request for assistance\nfrom volunteers in your area',
+                'role.request_help.title'.tr,
+                'role.request_help.description'.tr,
               ),
               AppSize.lHeight,
               AppSize.lHeight,
@@ -39,8 +40,8 @@ class RoleSelectionScreen extends StatelessWidget {
                 'volunteer',
                 Icons.handshake,
                 Colors.blue[700]!,
-                'Verify as Volunteer',
-                'Browse and respond to\nhelp requests in your area',
+                'role.volunteer.title'.tr,
+                'role.volunteer.description'.tr,
               ),
             ],
           ),

@@ -54,25 +54,25 @@ class StartPoint extends StatelessWidget {
           children: [
             _navBarItem(
               icon: Icons.home_rounded,
-              label: 'Home',
+              label: 'common.home'.tr,
               isActive: controller.currentIndex.value == 0,
               onTap: () => controller.setIndex(0),
             ),
             _navBarItem(
               icon: Icons.map_rounded,
-              label: 'Map',
+              label: 'common.map'.tr,
               isActive: controller.currentIndex.value == 1,
               onTap: () => controller.setIndex(1),
             ),
             _navBarItem(
               icon: Icons.groups_rounded,
-              label: 'Community',
+              label: 'common.community'.tr,
               isActive: controller.currentIndex.value == 2,
               onTap: () => controller.setIndex(2),
             ),
             _navBarItem(
               icon: Icons.person_rounded,
-              label: 'Profile',
+              label: 'common.profile'.tr,
               isActive: controller.currentIndex.value == 3,
               onTap: () => controller.setIndex(3),
             ),

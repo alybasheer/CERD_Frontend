@@ -42,7 +42,7 @@ class WeHelpAppBar extends StatelessWidget implements PreferredSizeWidget {
               ? IconButton(
                 onPressed: onBack ?? Get.back,
                 icon: const Icon(Icons.arrow_back_rounded),
-                tooltip: 'Back',
+                tooltip: 'common.back'.tr,
               )
               : null,
       titleSpacing: showBack ? 0 : 20,
@@ -63,9 +63,10 @@ class WeHelpAppBar extends StatelessWidget implements PreferredSizeWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            title.tr,
+            maxLines: 2,
+            overflow: TextOverflow.fade,
+            softWrap: true,
             style: AppTextStyling.title_18M.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -75,9 +76,10 @@ class WeHelpAppBar extends StatelessWidget implements PreferredSizeWidget {
             const SizedBox(height: 2),
             subtitleWidget ??
                 Text(
-                  subtitle!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  subtitle!.tr,
+                  maxLines: 2,
+                  overflow: TextOverflow.fade,
+                  softWrap: true,
                   style: AppTextStyling.body_12S.copyWith(
                     color: Colors.white.withValues(alpha: 0.78),
                   ),

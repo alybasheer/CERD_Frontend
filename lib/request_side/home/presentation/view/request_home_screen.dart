@@ -19,8 +19,8 @@ class RequestHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: const WeHelpAppBar(
-        title: 'Request Home',
-        subtitle: 'Nearby volunteers and emergency help',
+        title: 'request.home.title',
+        subtitle: 'request.home.subtitle',
       ),
       body: Obx(
         () => RefreshIndicator(
@@ -28,7 +28,7 @@ class RequestHomeScreen extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.all(AppSize.m),
             children: [
-              _SectionTitle(title: 'Nearby Active Volunteers'),
+              _SectionTitle(title: 'request.home.nearby'.tr),
               SizedBox(height: AppSize.sH),
               if (controller.isLoading.value)
                 AppShimmer(
@@ -43,12 +43,12 @@ class RequestHomeScreen extends StatelessWidget {
                   ),
                 )
               else if (controller.nearbyVolunteers.isEmpty)
-                _EmptyBox(text: 'No active volunteers nearby right now.')
+                _EmptyBox(text: 'request.home.nearby.empty'.tr)
               else
                 ...controller.nearbyVolunteers.map(_VolunteerTile.new),
               if (controller.activeRequests.isNotEmpty) ...[
                 SizedBox(height: AppSize.lH),
-                _SectionTitle(title: 'My Active Requests'),
+                _SectionTitle(title: 'request.home.active_requests'.tr),
                 SizedBox(height: AppSize.sH),
                 ...controller.activeRequests.map(
                   (request) => _RequestTile(
@@ -231,7 +231,9 @@ class _SosPulseButtonState extends State<_SosPulseButton>
                           ),
                         SizedBox(width: AppSize.xs),
                         Text(
-                          widget.isSending ? 'Sending SOS' : 'SOS Emergency',
+                          widget.isSending
+                              ? 'request.home.sending_sos'.tr
+                              : 'request.home.sos'.tr,
                           style: AppTextStyling.body_14M.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -278,31 +280,31 @@ class _RequestBottomNavBar extends StatelessWidget {
             children: [
               _NavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: 'common.home'.tr,
                 isActive: true,
                 onTap: () {},
               ),
               _NavItem(
                 icon: Icons.notifications_active_rounded,
-                label: 'Alerts',
+                label: 'common.alerts'.tr,
                 isActive: false,
                 onTap: controller.openAlerts,
               ),
               _NavItem(
                 icon: Icons.add_circle_outline_rounded,
-                label: 'Help',
+                label: 'common.help'.tr,
                 isActive: false,
                 onTap: controller.openRequestHelpSheet,
               ),
               _NavItem(
                 icon: Icons.people_alt_rounded,
-                label: 'Coordination',
+                label: 'common.coordination'.tr,
                 isActive: false,
                 onTap: controller.openCoordination,
               ),
               _NavItem(
                 icon: Icons.person_rounded,
-                label: 'Profile',
+                label: 'common.profile'.tr,
                 isActive: false,
                 onTap: controller.openProfile,
               ),
@@ -390,7 +392,10 @@ class _VolunteerTile extends StatelessWidget {
       iconColor: AppColors.reliefGreen,
       title: volunteer.name,
       subtitle: volunteer.expertise,
-      trailing: '${volunteer.rating.toStringAsFixed(1)} rating',
+      trailing:
+          '${volunteer.ratingAverage.toStringAsFixed(1)} • '
+          '${volunteer.ratingCount} '
+          '${volunteer.ratingCount == 1 ? 'common.rating'.tr : 'common.ratings'.tr}',
     );
   }
 }
@@ -414,7 +419,7 @@ class _RequestTile extends StatelessWidget {
       iconColor: request.isSos ? AppColors.emergencyRed : AppColors.steelBlue,
       title: request.displayTitle,
       subtitle: request.displayLocation,
-      trailing: request.status ?? 'active',
+      trailing: request.status ?? 'common.active'.tr,
       action:
           canChat
               ? Align(
@@ -425,7 +430,7 @@ class _RequestTile extends StatelessWidget {
                   label: Text(
                     request.acceptedByName == null ||
                             request.acceptedByName!.trim().isEmpty
-                        ? 'Chat volunteer'
+                        ? 'request.home.chat_volunteer'.tr
                         : 'Chat ${request.acceptedByName}',
                   ),
                 ),

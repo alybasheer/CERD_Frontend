@@ -87,7 +87,7 @@ class RequestDetailsDialog extends StatelessWidget {
                           SizedBox(height: AppSize.mH),
                           if (mediaUrls.isNotEmpty) ...[
                             Text(
-                              'Situation photos',
+                              'volunteer.home.situation_photos'.tr,
                               style: AppTextStyling.body_12S.copyWith(
                                 color: scheme.onSurface,
                                 fontWeight: FontWeight.w700,
@@ -157,7 +157,7 @@ class RequestDetailsDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text('common.cancel'.tr),
                         ),
                       ),
                       SizedBox(width: AppSize.s),
@@ -176,7 +176,7 @@ class RequestDetailsDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text(isAccepting ? 'Accepting' : 'Accept'),
+                          child: Text(isAccepting ? 'common.accepting'.tr : 'common.accept'.tr),
                         ),
                       ),
                     ],

@@ -13,7 +13,7 @@ Widget quickActionsSection() {
         children: [
           actionButton(
             icon: Icons.notifications_active,
-            label: 'Alerts',
+            label: 'common.alerts'.tr,
             color: AppColors.pureWhite,
             backgroundColor: AppColors.emergencyRed,
             onTap: () => Get.toNamed(RouteNames.alerts),
@@ -21,7 +21,7 @@ Widget quickActionsSection() {
           SizedBox(width: AppSize.m),
           actionButton(
             icon: Icons.people_alt,
-            label: 'Coordination',
+            label: 'common.coordination'.tr,
             color: AppColors.pureWhite,
             backgroundColor: AppColors.steelBlue,
             onTap: () => Get.toNamed(RouteNames.coordination),

@@ -48,8 +48,8 @@ class LoginScreen extends StatelessWidget {
                               children: [
                                 _AuthTextField(
                                   controller: authController.emailController,
-                                  label: 'Email Address',
-                                  hint: 'example@email.com',
+                                  label: 'auth.email.label'.tr,
+                                  hint: 'auth.email.hint'.tr,
                                   icon: Icons.email_outlined,
                                   keyboardType: TextInputType.emailAddress,
                                   validator: authController.validateEmail,
@@ -58,8 +58,8 @@ class LoginScreen extends StatelessWidget {
                                 Obx(
                                   () => _AuthTextField(
                                     controller: authController.passController,
-                                    label: 'Password',
-                                    hint: 'Enter your password',
+                                    label: 'auth.password.label'.tr,
+                                    hint: 'auth.password.hint'.tr,
                                     icon: Icons.lock_outlined,
                                     obscureText:
                                         !authController.isPasswordVisible.value,
@@ -67,8 +67,8 @@ class LoginScreen extends StatelessWidget {
                                     suffixIcon: IconButton(
                                       tooltip:
                                           authController.isPasswordVisible.value
-                                              ? 'Hide password'
-                                              : 'Show password',
+                                              ? 'auth.password.hide'.tr
+                                              : 'auth.password.show'.tr,
                                       icon: Icon(
                                         authController.isPasswordVisible.value
                                             ? Icons.visibility_rounded
@@ -140,7 +140,7 @@ class _LoginHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.lH),
         Text(
-          'Welcome Back',
+          'auth.login.welcome'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.title_30M.copyWith(
             color: scheme.primary,
@@ -149,7 +149,7 @@ class _LoginHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.xsH),
         Text(
-          'Sign in to continue helping your community.',
+          'auth.login.subtitle'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.body_14M.copyWith(
             color: scheme.onSurfaceVariant,
@@ -313,9 +313,9 @@ class _LoginOptions extends StatelessWidget {
               SizedBox(width: AppSize.xs),
               Flexible(
                 child: Text(
-                  'Remember me',
+                  'auth.remember_me'.tr,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.fade,
                   style: AppTextStyling.body_12S.copyWith(
                     color: scheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -339,9 +339,9 @@ class _LoginOptions extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       child: Text(
-        'Forgot Password?',
+        'auth.forgot_password'.tr,
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        overflow: TextOverflow.fade,
         style: AppTextStyling.body_12S.copyWith(
           color: scheme.primary,
           fontWeight: FontWeight.w700,
@@ -414,7 +414,7 @@ class _SignInButton extends StatelessWidget {
                     ),
                   )
                   : Text(
-                    'Sign In',
+                    'auth.sign_in'.tr,
                     style: AppTextStyling.body_14M.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -438,13 +438,13 @@ class _SignUpPrompt extends StatelessWidget {
         text: TextSpan(
           children: [
             TextSpan(
-              text: "Don't have an account? ",
+              text: 'auth.no_account'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             TextSpan(
-              text: 'Sign Up',
+              text: 'auth.sign_up'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.w800,

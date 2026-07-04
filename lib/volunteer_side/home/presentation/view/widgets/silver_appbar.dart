@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 Widget sliverAppBar({
   required int completedCount,
   required double rating,
+  required int ratingCount,
   required String fullName,
   required String locationName,
 }) {
@@ -110,7 +111,7 @@ Widget sliverAppBar({
                           Expanded(
                             child: Text(
                               locationName.trim().isEmpty
-                                  ? 'Resolving nearby area...'
+                                  ? 'volunteer.home.resolving_area'.tr
                                   : locationName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -126,7 +127,7 @@ Widget sliverAppBar({
                   ),
                 ),
                 Tooltip(
-                  message: 'Alerts',
+                  message: 'volunteer.home.alerts'.tr,
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
@@ -160,7 +161,7 @@ Widget sliverAppBar({
               Expanded(
                 child: statCard(
                   completedCount.toString(),
-                  'Completed',
+                  'volunteer.home.completed'.tr,
                   Icons.check_circle_rounded,
                   AppColors.reliefGreen,
                 ),
@@ -169,7 +170,9 @@ Widget sliverAppBar({
               Expanded(
                 child: statCard(
                   rating.toStringAsFixed(1),
-                  'Rating',
+                  ratingCount == 1
+                      ? '1 ${'common.rating'.tr}'
+                      : '$ratingCount ${'common.ratings'.tr}',
                   Icons.star_rounded,
                   AppColors.amberOrange,
                 ),

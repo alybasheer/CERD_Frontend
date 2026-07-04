@@ -26,6 +26,7 @@ class HomeScreen extends StatelessWidget {
                 sliverAppBar(
                   completedCount: controller.completedCount.value,
                   rating: controller.volunteerRating.value,
+                  ratingCount: controller.volunteerRatingCount.value,
                   fullName: controller.fullName.value,
                   locationName: controller.locationName.value,
                 ),
@@ -42,6 +43,7 @@ class HomeScreen extends StatelessWidget {
               sliverAppBar(
                 completedCount: controller.completedCount.value,
                 rating: controller.volunteerRating.value,
+                ratingCount: controller.volunteerRatingCount.value,
                 fullName: controller.fullName.value,
                 locationName: controller.locationName.value,
               ),

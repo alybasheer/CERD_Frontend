@@ -49,7 +49,7 @@ class _HelpToggleState extends State<HelpToggle> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Need help too?',
+                    'volunteer.home.need_help'.tr,
                     style: AppTextStyling.body_14M.copyWith(
                       color: scheme.onSurface,
                       fontWeight: FontWeight.w600,
@@ -57,7 +57,7 @@ class _HelpToggleState extends State<HelpToggle> {
                   ),
                   SizedBox(height: AppSize.xsH),
                   Text(
-                    'Switch to request side and ask for help.',
+                    'volunteer.home.switch_request'.tr,
                     style: AppTextStyling.body_12S.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),

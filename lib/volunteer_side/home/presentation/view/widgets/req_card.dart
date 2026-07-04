@@ -104,7 +104,7 @@ Widget requestCard(
                             vertical: 2,
                           ),
                           child: Text(
-                            'Urgent',
+                            'common.urgent'.tr,
                             style: AppTextStyling.body_12S.copyWith(
                               color: AppColors.amberOrange,
                               fontWeight: FontWeight.w600,
@@ -163,7 +163,7 @@ Widget requestCard(
                     child: OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.phone),
-                      label: const Text('Call'),
+                      label: Text('common.call'.tr),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.steelBlue,
                         side: BorderSide(
@@ -189,7 +189,7 @@ Widget requestCard(
                                 ),
                               )
                               : const Icon(Icons.check_circle),
-                      label: Text(isAccepting ? 'Accepting' : 'Accept'),
+                      label: Text(isAccepting ? 'common.accepting'.tr : 'common.accept'.tr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.reliefGreen,
                         shape: RoundedRectangleBorder(

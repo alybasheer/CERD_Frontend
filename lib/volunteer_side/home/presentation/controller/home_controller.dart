@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:flutter/material.dart';
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
@@ -9,10 +9,14 @@ import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_repo.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_user_model.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 
-class HomeController extends GetxController {
+class HomeController extends GetxController with WidgetsBindingObserver {
   final HelpRequestRepo _repo = HelpRequestRepo();
+  final MapRepo _mapRepo = MapRepo();
   final StorageHelper _storage = StorageHelper();
 
   final RxBool isLoading = false.obs;
@@ -20,23 +24,36 @@ class HomeController extends GetxController {
   final RxSet<String> acceptingRequestIds = <String>{}.obs;
   final RxInt completedCount = 0.obs;
   final RxDouble volunteerRating = 0.0.obs;
+  final RxInt volunteerRatingCount = 0.obs;
   final RxString fullName = ''.obs;
   final RxString locationName = ''.obs;
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
+  double? _lastLatitude;
+  double? _lastLongitude;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserSummary();
     _connectFlowEvents();
     fetchRequests();
     fetchVolunteerStats();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      fetchVolunteerStats();
+    }
+  }
+
   Future<void> fetchRequests() async {
     isLoading.value = true;
     try {
       final position = await getCurrentLocation();
+      _lastLatitude = position.latitude;
+      _lastLongitude = position.longitude;
       _resolveHeaderLocation(position.latitude, position.longitude);
       final list = await _repo.getOpenRequests(
         latitude: position.latitude,
@@ -110,36 +127,72 @@ class HomeController extends GetxController {
 
   Future<void> fetchVolunteerStats() async {
     try {
-      final response = await DioHelper().get(
+      final statusResponse = await DioHelper().get(
         url: ApiNames.volunteerStatus,
         isauthorize: true,
       );
 
-      final stats = _extractStatsMap(response);
-      if (stats == null) {
+      final stats = _extractStatsMap(statusResponse);
+      if (stats != null) {
+        final completed = _readInt(
+          stats['completedRequests'] ??
+              stats['completedCount'] ??
+              stats['totalCompleted'] ??
+              stats['resolvedRequests'] ??
+              stats['helpRequestsCompleted'],
+        );
+        if (completed != null) {
+          completedCount.value = completed;
+        }
+
+        final rating = _readDouble(
+          stats['ratingAverage'] ??
+              stats['averageRating'] ??
+              stats['avgRating'] ??
+              stats['rating'],
+        );
+        if (rating != null) {
+          volunteerRating.value = rating;
+        }
+
+        final ratingCount = _readInt(
+          stats['ratingCount'] ?? stats['ratingsCount'] ?? stats['totalRatings'],
+        );
+        if (ratingCount != null) {
+          volunteerRatingCount.value = ratingCount;
+        }
+      }
+
+      final location = await _currentLocation();
+      if (location == null) {
         return;
       }
 
-      final completed = _readInt(
-        stats['completedRequests'] ??
-            stats['completedCount'] ??
-            stats['totalCompleted'] ??
-            stats['resolvedRequests'] ??
-            stats['helpRequestsCompleted'],
+      final currentUserId = _storage.readData('userId')?.toString().trim() ?? '';
+      final volunteers = await _mapRepo.getMapUsers(
+        lat: location.latitude,
+        lng: location.longitude,
+        role: 'volunteer',
       );
-      if (completed != null) {
-        completedCount.value = completed;
+      MapUserModel? currentVolunteer;
+      for (final user in volunteers) {
+        if (user.id.trim().isNotEmpty && user.id.trim() == currentUserId) {
+          currentVolunteer = user;
+          break;
+        }
+      }
+      if (currentVolunteer == null) {
+        return;
       }
 
-      final rating = _readDouble(
-        stats['rating'] ??
-            stats['averageRating'] ??
-            stats['avgRating'] ??
-            stats['volunteerRating'],
-      );
-      if (rating != null) {
-        volunteerRating.value = rating;
+      volunteerRating.value = currentVolunteer.ratingAverage;
+      volunteerRatingCount.value = currentVolunteer.ratingCount;
+      _storage.saveData('volunteer_rating_average', volunteerRating.value);
+      _storage.saveData('volunteer_rating_count', volunteerRatingCount.value);
+      if (currentVolunteer.completedCount > 0) {
+        completedCount.value = currentVolunteer.completedCount;
       }
+      _storage.saveData('volunteer_completed_count', completedCount.value);
     } catch (e) {
       // Leave the last known stats in place if the endpoint fails.
     }
@@ -172,6 +225,7 @@ class HomeController extends GetxController {
   @override
   void onClose() {
     _flowSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
 
@@ -221,6 +275,21 @@ class HomeController extends GetxController {
     return null;
   }
 
+  Future<LatLng?> _currentLocation() async {
+    if (_lastLatitude != null && _lastLongitude != null) {
+      return LatLng(_lastLatitude!, _lastLongitude!);
+    }
+
+    try {
+      final position = await getCurrentLocation();
+      _lastLatitude = position.latitude;
+      _lastLongitude = position.longitude;
+      return LatLng(position.latitude, position.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _loadUserSummary() {
     final storedName =
         _storage.readData('profile_name') ?? _storage.readData('name');
@@ -247,6 +316,14 @@ class HomeController extends GetxController {
     } else {
       locationName.value = 'Resolving nearby area...';
     }
+
+    volunteerRating.value =
+        _readDouble(_storage.readData('volunteer_rating_average')) ?? 0;
+    volunteerRatingCount.value =
+        _readInt(_storage.readData('volunteer_rating_count')) ?? 0;
+    completedCount.value =
+        _readInt(_storage.readData('volunteer_completed_count')) ??
+        completedCount.value;
   }
 
   void _resolveHeaderLocation(double latitude, double longitude) {

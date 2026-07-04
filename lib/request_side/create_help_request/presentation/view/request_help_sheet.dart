@@ -49,7 +49,7 @@ class RequestHelpSheet extends StatelessWidget {
                 ),
                 SizedBox(height: AppSize.lH),
                 Text(
-                  'Request Help',
+                  'request_help.title'.tr,
                   style: AppTextStyling.title_18M.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -57,14 +57,14 @@ class RequestHelpSheet extends StatelessWidget {
                 ),
                 SizedBox(height: AppSize.xsH),
                 Text(
-                  'Describe your situation and we will connect you with helpers.',
+                  'request_help.subtitle'.tr,
                   style: AppTextStyling.body_14M.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
                 SizedBox(height: AppSize.lH),
                 Text(
-                  'Category',
+                  'request_help.category'.tr,
                   style: AppTextStyling.body_14M.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -73,7 +73,7 @@ class RequestHelpSheet extends StatelessWidget {
                 SizedBox(height: AppSize.sH),
                 Obx(
                   () => RequestDropdownField(
-                    hint: 'Select category',
+                    hint: 'request_help.category_hint'.tr,
                     items: controller.categories,
                     value: controller.selectedCategory.value,
                     onChanged: controller.setCategory,
@@ -81,7 +81,7 @@ class RequestHelpSheet extends StatelessWidget {
                 ),
                 SizedBox(height: AppSize.mH),
                 Text(
-                  'Subcategory',
+                  'request_help.subcategory'.tr,
                   style: AppTextStyling.body_14M.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -90,7 +90,7 @@ class RequestHelpSheet extends StatelessWidget {
                 SizedBox(height: AppSize.sH),
                 Obx(
                   () => RequestDropdownField(
-                    hint: 'Select subcategory',
+                    hint: 'request_help.subcategory_hint'.tr,
                     items: controller.availableSubcategories,
                     value: controller.selectedSubcategory.value,
                     onChanged: controller.setSubcategory,
@@ -98,7 +98,7 @@ class RequestHelpSheet extends StatelessWidget {
                 ),
                 SizedBox(height: AppSize.mH),
                 Text(
-                  'Description',
+                  'request_help.description'.tr,
                   style: AppTextStyling.body_14M.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -114,7 +114,7 @@ class RequestHelpSheet extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: controller.applySmartSuggestion,
                     icon: const Icon(Icons.auto_fix_high, size: 18),
-                    label: const Text('Improve'),
+                    label: Text('common.improve'.tr),
                     style: TextButton.styleFrom(
                       foregroundColor: scheme.primary,
                     ),
@@ -122,7 +122,7 @@ class RequestHelpSheet extends StatelessWidget {
                 ),
                 SizedBox(height: AppSize.mH),
                 Text(
-                  'Photos',
+                  'request_help.photos'.tr,
                   style: AppTextStyling.body_14M.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -157,7 +157,7 @@ class RequestHelpSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Cancel'),
+                        child: Text('common.cancel'.tr),
                       ),
                     ),
                     SizedBox(width: AppSize.s),
@@ -176,8 +176,8 @@ class RequestHelpSheet extends StatelessWidget {
                           ),
                           child: Text(
                             controller.isSubmitting.value
-                                ? 'Sending...'
-                                : 'Send Request',
+                                ? 'common.sending'.tr
+                                : 'request_help.send_request'.tr,
                           ),
                         ),
                       ),

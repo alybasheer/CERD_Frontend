@@ -16,9 +16,9 @@ class AdminPanelScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Admin Panel',
-        subtitle: 'Review volunteer applications',
+      appBar: WeHelpAppBar(
+        title: 'admin.title'.tr,
+        subtitle: 'admin.subtitle'.tr,
         showBack: true,
       ),
       body: RefreshIndicator(
@@ -98,19 +98,19 @@ class _SummaryStrip extends StatelessWidget {
     return Row(
       children: [
         _SummaryTile(
-          label: 'Pending',
+          label: 'common.pending'.tr,
           value: ctrl.counts['pending'] ?? 0,
           color: AppColors.amberOrange,
         ),
         const SizedBox(width: 8),
         _SummaryTile(
-          label: 'Approved',
+          label: 'common.approved'.tr,
           value: ctrl.counts['approved'] ?? 0,
           color: AppColors.reliefGreen,
         ),
         const SizedBox(width: 8),
         _SummaryTile(
-          label: 'Rejected',
+          label: 'common.rejected'.tr,
           value: ctrl.counts['rejected'] ?? 0,
           color: AppColors.emergencyRed,
         ),
@@ -186,7 +186,7 @@ class _StatusFilters extends StatelessWidget {
           final color = _statusColor(status);
           return ChoiceChip(
             selected: selected,
-            label: Text(_titleCase(status)),
+            label: Text(_getStatusLabel(status)),
             onSelected: (_) => ctrl.changeStatus(status),
             selectedColor: color.withValues(alpha: 0.16),
             labelStyle: TextStyle(
@@ -215,7 +215,7 @@ class _SearchField extends StatelessWidget {
       controller: ctrl.searchController,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search name, email, CNIC, city',
+        hintText: 'admin.search_hint'.tr,
         prefixIcon: const Icon(Icons.search_rounded),
         suffixIcon:
             ctrl.searchController.text.trim().isEmpty
@@ -320,7 +320,7 @@ class _ApplicationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      subtitle.isEmpty ? 'No expertise provided' : subtitle,
+                      subtitle.isEmpty ? 'admin.no_expertise'.tr : subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyling.body_12S.copyWith(
@@ -330,7 +330,7 @@ class _ApplicationCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       _stringValue(userData['email']).isEmpty
-                          ? 'Email not available'
+                          ? 'admin.email_not_available'.tr
                           : _stringValue(userData['email']),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -372,7 +372,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'No ${_titleCase(status)} Applications',
+              'admin.no_applications'.trParams({'status': _getStatusLabel(status)}),
               textAlign: TextAlign.center,
               style: AppTextStyling.body_14M.copyWith(
                 fontWeight: FontWeight.w800,
@@ -380,7 +380,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Pull down to refresh or switch status.',
+              'admin.pull_refresh'.tr,
               textAlign: TextAlign.center,
               style: AppTextStyling.body_12S.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -408,7 +408,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        _titleCase(status),
+        _getStatusLabel(status),
         style: TextStyle(
           fontSize: 11,
           color: color,
@@ -437,6 +437,18 @@ String _titleCase(String value) {
     return '';
   }
   return clean[0].toUpperCase() + clean.substring(1).toLowerCase();
+}
+
+String _getStatusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case 'approved':
+      return 'common.approved'.tr;
+    case 'rejected':
+      return 'common.rejected'.tr;
+    case 'pending':
+    default:
+      return 'common.pending'.tr;
+  }
 }
 
 String _stringValue(dynamic value) {

@@ -7,10 +7,13 @@ import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:fyp_source_code/utilities/validators/validators.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_repo.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_user_model.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class ProfileController extends GetxController with WidgetsBindingObserver {
+  final MapRepo _mapRepo = MapRepo();
   final storage = GetStorage();
 
   final nameController = TextEditingController();
@@ -26,6 +29,9 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
   final profileEmail = ''.obs;
   final profileLocation = ''.obs;
   final profileImage = ''.obs;
+  final volunteerRating = 0.0.obs;
+  final volunteerRatingCount = 0.obs;
+  final completedCount = 0.obs;
 
   @override
   void onInit() {
@@ -33,6 +39,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     refreshFromStorage();
     themeLoad();
+    unawaited(fetchVolunteerStats());
   }
 
   @override
@@ -40,6 +47,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       refreshFromStorage();
       unawaited(themeLoad());
+      unawaited(fetchVolunteerStats());
     }
   }
 
@@ -77,8 +85,51 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     profileImage.value = savedProfileImage;
     isSwitching.value =
         storage.read('theme') == true || storage.read('dark_mode') == true;
+    volunteerRating.value =
+        _readDouble(storage.read('volunteer_rating_average')) ?? 0;
+    volunteerRatingCount.value =
+        _readInt(storage.read('volunteer_rating_count')) ?? 0;
+    completedCount.value = _readInt(storage.read('volunteer_completed_count')) ?? 0;
     _syncPreviewFields();
     unawaited(_resolveSavedLocation(savedLocation));
+  }
+
+  Future<void> fetchVolunteerStats() async {
+    if (!isVolunteer) {
+      return;
+    }
+
+    try {
+      final location = await getCurrentLocation();
+      final currentUserId = storage.read('userId')?.toString().trim() ?? '';
+      final volunteers = await _mapRepo.getMapUsers(
+        lat: location.latitude,
+        lng: location.longitude,
+        role: 'volunteer',
+      );
+
+      MapUserModel? currentVolunteer;
+      for (final volunteer in volunteers) {
+        if (volunteer.id.trim().isNotEmpty &&
+            volunteer.id.trim() == currentUserId) {
+          currentVolunteer = volunteer;
+          break;
+        }
+      }
+
+      if (currentVolunteer == null) {
+        return;
+      }
+
+      volunteerRating.value = currentVolunteer.ratingAverage;
+      volunteerRatingCount.value = currentVolunteer.ratingCount;
+      completedCount.value = currentVolunteer.completedCount;
+      storage.write('volunteer_rating_average', volunteerRating.value);
+      storage.write('volunteer_rating_count', volunteerRatingCount.value);
+      storage.write('volunteer_completed_count', completedCount.value);
+    } catch (_) {
+      // Keep the cached values when the rating stats endpoint is unavailable.
+    }
   }
 
   Future<void> saveProfile() async {
@@ -176,6 +227,12 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
       return status[0].toUpperCase() + status.substring(1).toLowerCase();
     }
     return 'Active';
+  }
+
+  String get ratingSummary {
+    return '${volunteerRating.value.toStringAsFixed(1)} • '
+        '${volunteerRatingCount.value} '
+        '${volunteerRatingCount.value == 1 ? 'rating' : 'ratings'}';
   }
 
   Color get roleColor {
@@ -277,6 +334,29 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
 
   String _normalizeRole(String value) {
     return value.trim().toLowerCase().replaceAll(' ', '_');
+  }
+
+  double? _readDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  int? _readInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
   }
 
   void _syncPreviewFields() {

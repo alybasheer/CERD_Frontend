@@ -78,7 +78,7 @@ class _OnboardingPage extends StatelessWidget {
             ),
             SizedBox(height: 34.h),
             Text(
-              model.title,
+              model.titleKey.toString().tr,
               textAlign: TextAlign.center,
               style: AppTextStyling.title_30M.copyWith(
                 color: scheme.onSurface,
@@ -88,7 +88,7 @@ class _OnboardingPage extends StatelessWidget {
             ),
             SizedBox(height: 14.h),
             Text(
-              model.description,
+              model.descriptionKey.toString().tr,
               textAlign: TextAlign.center,
               style: AppTextStyling.body_14M.copyWith(
                 color: scheme.onSurfaceVariant,
@@ -203,11 +203,11 @@ class _VisualPanel extends StatelessWidget {
 
   List<Widget> _contextBadges(Color color) {
     final badges = <List<dynamic>>[
-      [Icons.sos_rounded, 'SOS'],
-      [Icons.my_location_rounded, 'Live'],
-      [Icons.groups_rounded, 'Team'],
-      [Icons.notifications_active_rounded, 'Alert'],
-      [Icons.check_circle_rounded, 'Ready'],
+      [Icons.sos_rounded, 'onboarding.badge.sos'],
+      [Icons.my_location_rounded, 'onboarding.badge.live'],
+      [Icons.groups_rounded, 'onboarding.badge.team'],
+      [Icons.notifications_active_rounded, 'onboarding.badge.alert'],
+      [Icons.check_circle_rounded, 'onboarding.badge.ready'],
     ];
     final badge = badges[index % badges.length];
 
@@ -217,7 +217,7 @@ class _VisualPanel extends StatelessWidget {
         top: 10,
         child: _MiniBadge(
           icon: badge[0] as IconData,
-          label: badge[1] as String,
+          label: (badge[1] as String).tr,
           color: color,
         ),
       ),
@@ -226,7 +226,7 @@ class _VisualPanel extends StatelessWidget {
         bottom: 10,
         child: _MiniBadge(
           icon: Icons.verified_rounded,
-          label: 'Trusted',
+          label: 'onboarding.badge.trusted'.tr,
           color: AppColors.reliefGreen,
         ),
       ),
@@ -363,7 +363,7 @@ class _OnboardingControls extends StatelessWidget {
                       color: AppColors.emergencyRed,
                     ),
                     label: Text(
-                      'Skip to App',
+                      'onboarding.skip'.tr,
                       style: TextStyle(
                         color: AppColors.emergencyRed,
                         fontSize: 14.sp,
@@ -397,7 +397,7 @@ class _OnboardingControls extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      isLastPage ? 'Get Started' : 'Next',
+                      isLastPage ? 'onboarding.get_started'.tr : 'common.next'.tr,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w800,

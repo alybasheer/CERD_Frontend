@@ -158,12 +158,12 @@ class _WaitingScreenState extends State<WaitingScreen>
                     const SizedBox(height: 28),
 
                     /// Title - Changes based on status
-                    Obx(() {
-                      String title = "Awaiting Admin Approval";
+                     Obx(() {
+                      String title = 'waiting.title_pending'.tr;
                       if (controller.isApproved.value) {
-                        title = "Application Approved! ✅";
+                        title = 'waiting.title_approved'.tr;
                       } else if (controller.isRejected.value) {
-                        title = "Application Rejected ❌";
+                        title = 'waiting.title_rejected'.tr;
                       }
                       return Text(
                         title,
@@ -184,14 +184,14 @@ class _WaitingScreenState extends State<WaitingScreen>
                     const SizedBox(height: 16),
 
                     /// Subtitle - Changes based on status
-                    Obx(() {
+                     Obx(() {
                       String subtitle =
-                          "Your account is being reviewed.\nWe'll notify you shortly.";
+                          'waiting.subtitle_pending'.tr;
                       if (controller.isApproved.value) {
                         subtitle =
-                            "Welcome to our community!\nRedirecting to home...";
+                            'waiting.subtitle_approved'.tr;
                       } else if (controller.isRejected.value) {
-                        subtitle = "Please try again later or contact support.";
+                        subtitle = 'waiting.subtitle_rejected'.tr;
                       }
                       return Text(
                         subtitle,

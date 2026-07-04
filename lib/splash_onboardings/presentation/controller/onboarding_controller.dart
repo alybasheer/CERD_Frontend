@@ -11,37 +11,32 @@ class OnboardingController extends GetxController {
 
   final List<OnboardingModel> onboardingPages = [
     OnboardingModel(
-      title: 'Help When You Need It',
-      description:
-          'Report emergencies or community tasks in real-time. Our volunteers respond instantly to help you stay safe and supported.',
+      titleKey: 'onboarding.page1.title',
+      descriptionKey: 'onboarding.page1.description',
       assetsImg: 'assets/icons/sosIcon.svg',
       iconColor: Color(0xFFE53935),
     ),
     OnboardingModel(
-      title: 'Live Map Tracking',
-      description:
-          'See volunteers nearby on a live map. Track their location, get real-time updates, and connect with help faster than ever.',
+      titleKey: 'onboarding.page2.title',
+      descriptionKey: 'onboarding.page2.description',
       assetsImg: 'assets/icons/map.svg',
       iconColor: Color(0xFF00897B),
     ),
     OnboardingModel(
-      title: 'Join Your Community',
-      description:
-          'Connect with volunteers in your area. Build trust, share experiences, and be part of a caring community that helps each other.',
+      titleKey: 'onboarding.page3.title',
+      descriptionKey: 'onboarding.page3.description',
       assetsImg: 'assets/icons/teamIcon.svg',
       iconColor: Color(0xFF0047ab),
     ),
     OnboardingModel(
-      title: 'Smart Alerts',
-      description:
-          'Get instant notifications when volunteers respond. Never miss important updates. Stay informed, stay safe, stay connected.',
+      titleKey: 'onboarding.page4.title',
+      descriptionKey: 'onboarding.page4.description',
       assetsImg: 'assets/icons/alertIcon.svg',
       iconColor: Color(0xFFFB8C00),
     ),
     OnboardingModel(
-      title: 'Ready to Help?',
-      description:
-          'Join thousands of volunteers making a difference. Whether you need help or want to help others, we\'re here for you.',
+      titleKey: 'onboarding.page5.title',
+      descriptionKey: 'onboarding.page5.description',
       assetsImg: 'assets/icons/thumbsup.svg',
       iconColor: Color(0xFF43A047),
     ),

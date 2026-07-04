@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class ReqEmptyState extends StatelessWidget {
   const ReqEmptyState({super.key});
@@ -23,7 +24,7 @@ class ReqEmptyState extends StatelessWidget {
             SizedBox(width: AppSize.s),
             Expanded(
               child: Text(
-                'No nearby requests yet. Check back in a moment.',
+                'volunteer.home.no_requests'.tr,
                 style: AppTextStyling.body_14M.copyWith(
                   color: AppColors.darkGray,
                 ),
