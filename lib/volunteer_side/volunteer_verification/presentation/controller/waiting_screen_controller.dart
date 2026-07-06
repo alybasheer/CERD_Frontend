@@ -37,7 +37,7 @@ class WaitingScreenController extends GetxController {
 
       // Fetch status from backend API
       final response = await _dioHelper.get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
 

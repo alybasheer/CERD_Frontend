@@ -1,19 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
+import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:fyp_source_code/utilities/validators/validators.dart';
-import 'package:fyp_source_code/volunteer_side/map/data/map_repo.dart';
-import 'package:fyp_source_code/volunteer_side/map/data/map_user_model.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class ProfileController extends GetxController with WidgetsBindingObserver {
-  final MapRepo _mapRepo = MapRepo();
   final storage = GetStorage();
 
   final nameController = TextEditingController();
@@ -100,30 +99,48 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     }
 
     try {
-      final location = await getCurrentLocation();
-      final currentUserId = storage.read('userId')?.toString().trim() ?? '';
-      final volunteers = await _mapRepo.getMapUsers(
-        lat: location.latitude,
-        lng: location.longitude,
-        role: 'volunteer',
+      final statusResponse = await DioHelper().get(
+        url: ApiNames.getvolunteerStats,
+        isauthorize: true,
       );
 
-      MapUserModel? currentVolunteer;
-      for (final volunteer in volunteers) {
-        if (volunteer.id.trim().isNotEmpty &&
-            volunteer.id.trim() == currentUserId) {
-          currentVolunteer = volunteer;
-          break;
+      if (statusResponse is Map) {
+        final responseMap = Map<String, dynamic>.from(statusResponse);
+        final data = responseMap['data'] is Map
+            ? Map<String, dynamic>.from(responseMap['data'])
+            : responseMap;
+
+        final completed = _readInt(
+          data['completedRequests'] ??
+              data['completedCount'] ??
+              data['totalHelped'] ??
+              data['resolvedRequests'] ??
+              data['helpRequestsCompleted'],
+        );
+        if (completed != null) {
+          completedCount.value = completed;
+        }
+
+        final rating = _readDouble(
+          data['ratingAverage'] ??
+              data['averageRating'] ??
+              data['avgRating'] ??
+              data['rating'],
+        );
+        if (rating != null) {
+          volunteerRating.value = rating;
+        }
+
+        final ratingCount = _readInt(
+          data['ratingCount'] ??
+              data['ratingsCount'] ??
+              data['totalRatings'],
+        );
+        if (ratingCount != null) {
+          volunteerRatingCount.value = ratingCount;
         }
       }
 
-      if (currentVolunteer == null) {
-        return;
-      }
-
-      volunteerRating.value = currentVolunteer.ratingAverage;
-      volunteerRatingCount.value = currentVolunteer.ratingCount;
-      completedCount.value = currentVolunteer.completedCount;
       storage.write('volunteer_rating_average', volunteerRating.value);
       storage.write('volunteer_rating_count', volunteerRatingCount.value);
       storage.write('volunteer_completed_count', completedCount.value);

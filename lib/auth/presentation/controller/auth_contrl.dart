@@ -7,6 +7,7 @@ import 'package:fyp_source_code/auth/data/repo/signup_repo.dart';
 import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
+import 'package:fyp_source_code/services/auth_service.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:fyp_source_code/utilities/validators/validators.dart';
@@ -292,6 +293,32 @@ class AuthController extends GetxController {
     }
   }
 
+  // ============ GOOGLE SIGN-IN ============
+  Future<void> signInWithGoogle() async {
+    isLoading.value = true;
+
+    try {
+      final result = await AuthService().signInWithGoogle();
+
+      if (result['success'] == true) {
+        final model = result['data'] as SignupModel;
+        ToastHelper.showSuccess('Google sign-in successful!');
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          await _navigateAfterLogin(model.user!);
+        });
+      } else {
+        ToastHelper.showError(
+          (result['message'] as String?) ?? 'Google sign-in failed',
+        );
+      }
+    } catch (e) {
+      print('Google Sign-In error: $e');
+      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // ============ CLEAR FORM ============
   void clearLoginForm() {
     emailController.clear();
@@ -315,6 +342,7 @@ class AuthController extends GetxController {
   // ============ LOGOUT ============
   Future<void> logout() async {
     try {
+      await AuthService().signOut();
       StorageHelper().clearSessionData();
       userRole.value = '';
       clearLoginForm();
@@ -370,7 +398,7 @@ class AuthController extends GetxController {
   Future<_VolunteerStatusSnapshot> _fetchVolunteerStatusSnapshot() async {
     try {
       final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
       return _VolunteerStatusSnapshot.fromResponse(response);

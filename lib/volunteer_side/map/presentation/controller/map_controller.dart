@@ -231,7 +231,7 @@ class MapCntrl extends GetxController {
               "✅ Location sent to backend: ${pos.latitude}, ${pos.longitude}",
             );
           } catch (e) {
-            print("❌ Error sending location: $e");
+            print(" Error sending location: $e");
           }
         });
       },
@@ -298,6 +298,8 @@ class MapCntrl extends GetxController {
     _storage.removeData(_activeRequestStorageKey);
   }
 
+//Fetch dobra karna chaiye ya nahi
+
   Future<void> _scheduleRouteRefresh({bool force = false}) async {
     final from = currentLatLng.value;
     final to = activeRequestLatLng;
@@ -338,6 +340,8 @@ class MapCntrl extends GetxController {
       _isFetchingRoute = false;
     }
   }
+
+  //Shortest driving path api through osm
 
   Future<List<LatLng>> _fetchShortestPath({
     required LatLng from,
@@ -402,7 +406,7 @@ class MapCntrl extends GetxController {
 
     return points;
   }
-
+//completion pay count++ karta hai
   void _refreshVolunteerDashboard({bool completed = false}) {
     if (!Get.isRegistered<HomeController>()) {
       return;

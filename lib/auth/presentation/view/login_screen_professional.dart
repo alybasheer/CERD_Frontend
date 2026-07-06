@@ -84,6 +84,8 @@ class LoginScreen extends StatelessWidget {
                                 _LoginOptions(controller: authController),
                                 SizedBox(height: AppSize.lH),
                                 _SignInButton(controller: authController),
+                                SizedBox(height: AppSize.mH),
+                                _GoogleSignInButton(controller: authController),
                               ],
                             ),
                           ),
@@ -328,51 +330,61 @@ class _LoginOptions extends StatelessWidget {
       ),
     );
 
-    final forgotPassword = TextButton(
-      onPressed: () {
-        ToastHelper.showInfo('Password reset feature coming soon');
-      },
-      style: TextButton.styleFrom(
-        foregroundColor: scheme.primary,
-        minimumSize: Size.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        'auth.forgot_password'.tr,
-        maxLines: 1,
-        overflow: TextOverflow.fade,
-        style: AppTextStyling.body_12S.copyWith(
-          color: scheme.primary,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 315) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              rememberMe,
-              Align(alignment: Alignment.centerLeft, child: forgotPassword),
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: rememberMe),
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: forgotPassword,
-              ),
-            ),
-          ],
-        );
+        return Row(children: [Expanded(child: rememberMe)]);
       },
+    );
+  }
+}
+
+class _GoogleSignInButton extends StatelessWidget {
+  final AuthController controller;
+
+  const _GoogleSignInButton({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Obx(
+      () => SizedBox(
+        width: double.infinity,
+        height: AppSize.buttonHeight,
+        child: OutlinedButton.icon(
+          onPressed:
+              controller.isLoading.value
+                  ? null
+                  : () => controller.signInWithGoogle(),
+          icon: Image.asset(
+            'assets/icons/google_logo.png',
+            height: 20,
+            width: 20,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.login, size: 20),
+          ),
+          label: Text(
+            'auth.sign_in_google'.tr,
+            style: AppTextStyling.body_14M.copyWith(
+              color:
+                  controller.isLoading.value
+                      ? scheme.onSurface.withValues(alpha: 0.38)
+                      : scheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: theme.dividerColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            disabledBackgroundColor:
+                scheme.onSurface.withValues(alpha: 0.04),
+          ),
+        ),
+      ),
     );
   }
 }

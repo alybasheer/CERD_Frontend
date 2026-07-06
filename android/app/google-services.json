@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "954241809959",
-    "project_id": "cerd-2c2d7",
-    "storage_bucket": "cerd-2c2d7.firebasestorage.app"
+    "project_number": "1063827736478",
+    "project_id": "cerd-theemergencyresponse",
+    "storage_bucket": "cerd-theemergencyresponse.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:954241809959:android:1e63b39802c3b7228a1802",
+        "mobilesdk_app_id": "1:1063827736478:android:f8efe3ca4b1e42c265388f",
         "android_client_info": {
           "package_name": "com.alycodes.cerd"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1063827736478-ii0at0q42jlcmv1g02pjgit3ns3k2vc0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBJ6JO4vMaEuOrygFjEkbtv_YZixD3SlvQ"
+          "current_key": "AIzaSyAzHqCx9MDIDnMcSWSIbc0TnbM5i33PUsQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1063827736478-ii0at0q42jlcmv1g02pjgit3ns3k2vc0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1063827736478-ecs7covgalle6puu086bod2638jj224l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fypSourceCode"
+              }
+            }
+          ]
         }
       }
     }

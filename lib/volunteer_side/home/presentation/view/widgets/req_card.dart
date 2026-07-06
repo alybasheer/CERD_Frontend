@@ -159,23 +159,8 @@ Widget requestCard(
               SizedBox(height: AppSize.mH),
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.phone),
-                      label: Text('common.call'.tr),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.steelBlue,
-                        side: BorderSide(
-                          color: AppColors.steelBlue.withOpacity(0.5),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: AppSize.s),
+                  
+                  
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: isAccepting ? null : onAccept,
