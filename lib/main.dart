@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:fyp_source_code/firebase_options.dart';
 import 'package:fyp_source_code/localization/app_translations.dart';
 import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/localization/locale_controller.dart';
@@ -14,6 +16,9 @@ import 'package:get_storage/get_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await GetStorage.init();
   final profileCtrl = Get.put(ProfileController());
   Get.put(LocaleController());

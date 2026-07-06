@@ -87,7 +87,7 @@ class SplashController extends GetxController {
   Future<void> _fetchAndNavigateBasedOnStatus() async {
     try {
       final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
 
@@ -140,7 +140,7 @@ class SplashController extends GetxController {
   Future<_VolunteerStatusSnapshot> _fetchVolunteerStatus() async {
     try {
       final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
       return _VolunteerStatusSnapshot.fromResponse(response);

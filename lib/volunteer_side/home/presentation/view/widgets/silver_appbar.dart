@@ -107,7 +107,6 @@ Widget sliverAppBar({
                             size: 16,
                             color: AppColors.steelBlue,
                           ),
-                          SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               locationName.trim().isEmpty

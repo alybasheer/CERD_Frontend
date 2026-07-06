@@ -30,7 +30,7 @@ class LanguageCapsule extends StatelessWidget {
                     const Icon(Icons.language_rounded, size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      localeController.isUrdu ? 'language.ur'.tr : 'language.en'.tr,
+                      !localeController.isUrdu ? 'language.ur'.tr : 'language.en'.tr,
                       style: TextStyle(
                         color: scheme.onSurface,
                         fontWeight: FontWeight.w700,

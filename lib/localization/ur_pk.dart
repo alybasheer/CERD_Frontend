@@ -68,6 +68,7 @@ const Map<String, String> urPK = {
   'auth.password.hide': 'پاس ورڈ چھپائیں',
   'auth.remember_me': 'مجھے یاد رکھیں',
   'auth.sign_in': 'سائن اِن',
+  'auth.sign_in_google': 'Google کے ساتھ سائن اِن کریں',
   'auth.register.top': 'Join CERD Community',
   'auth.register.title': 'اکاؤنٹ بنائیں',
   'auth.register.subtitle':

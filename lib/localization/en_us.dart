@@ -68,6 +68,7 @@ const Map<String, String> enUS = {
   'auth.password.hide': 'Hide password',
   'auth.remember_me': 'Remember me',
   'auth.sign_in': 'Sign In',
+  'auth.sign_in_google': 'Sign in with Google',
   'auth.register.top': 'Join CERD Community',
   'auth.register.title': 'Create Account',
   'auth.register.subtitle':
