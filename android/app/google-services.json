@@ -1,41 +1,42 @@
 {
   "project_info": {
-    "project_number": "1063827736478",
-    "project_id": "cerd-theemergencyresponse",
-    "storage_bucket": "cerd-theemergencyresponse.firebasestorage.app"
+    "project_number": "1019157164328",
+    "project_id": "cerd-95f4e",
+    "storage_bucket": "cerd-95f4e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1063827736478:android:f8efe3ca4b1e42c265388f",
+        "mobilesdk_app_id": "1:1019157164328:android:516012563946c54f19a01d",
         "android_client_info": {
-          "package_name": "com.alycodes.cerd"
+          "package_name": "com.ghaffar.cerd"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1063827736478-ii0at0q42jlcmv1g02pjgit3ns3k2vc0.apps.googleusercontent.com",
+          "client_id": "1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ghaffar.cerd",
+            "certificate_hash": "0d479bfa34953086a06a14af2879987e5517bfc3"
+          }
+        },
+        {
+          "client_id": "1019157164328-k3t159fa7pkthaqs6l9i6qi64ojoht48.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAzHqCx9MDIDnMcSWSIbc0TnbM5i33PUsQ"
+          "current_key": "AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1063827736478-ii0at0q42jlcmv1g02pjgit3ns3k2vc0.apps.googleusercontent.com",
+              "client_id": "1019157164328-k3t159fa7pkthaqs6l9i6qi64ojoht48.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "1063827736478-ecs7covgalle6puu086bod2638jj224l.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.fypSourceCode"
-              }
             }
           ]
         }

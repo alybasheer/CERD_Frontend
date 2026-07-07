@@ -35,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.alycodes.cerd"
+        applicationId = "com.ghaffar.cerd"
 
         // REQUIRED FIX for your error
         minSdk = flutter.minSdkVersion

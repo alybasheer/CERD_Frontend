@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBK86zhIesnU37g04-e20ckJvtEJQQDm6g',
-    appId: '1:1063827736478:web:445a4c444571dc9265388f',
-    messagingSenderId: '1063827736478',
-    projectId: 'cerd-theemergencyresponse',
-    authDomain: 'cerd-theemergencyresponse.firebaseapp.com',
-    storageBucket: 'cerd-theemergencyresponse.firebasestorage.app',
-    measurementId: 'G-ZZP0VS2QC1',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    authDomain: 'cerd-95f4e.firebaseapp.com',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAzHqCx9MDIDnMcSWSIbc0TnbM5i33PUsQ',
-    appId: '1:1063827736478:android:f8efe3ca4b1e42c265388f',
-    messagingSenderId: '1063827736478',
-    projectId: 'cerd-theemergencyresponse',
-    storageBucket: 'cerd-theemergencyresponse.firebasestorage.app',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCecPbDGqrPBuhF721DpcUNSBelaprKhnY',
-    appId: '1:1063827736478:ios:f3e53a4844d9fa1b65388f',
-    messagingSenderId: '1063827736478',
-    projectId: 'cerd-theemergencyresponse',
-    storageBucket: 'cerd-theemergencyresponse.firebasestorage.app',
-    iosClientId: '1063827736478-ecs7covgalle6puu086bod2638jj224l.apps.googleusercontent.com',
-    iosBundleId: 'com.example.fypSourceCode',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
+    iosClientId: '1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com',
+    iosBundleId: 'com.ghaffar.cerd',
   );
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCecPbDGqrPBuhF721DpcUNSBelaprKhnY',
-    appId: '1:1063827736478:ios:f3e53a4844d9fa1b65388f',
-    messagingSenderId: '1063827736478',
-    projectId: 'cerd-theemergencyresponse',
-    storageBucket: 'cerd-theemergencyresponse.firebasestorage.app',
-    iosClientId: '1063827736478-ecs7covgalle6puu086bod2638jj224l.apps.googleusercontent.com',
-    iosBundleId: 'com.example.fypSourceCode',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
+    iosClientId: '1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com',
+    iosBundleId: 'com.ghaffar.cerd',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBK86zhIesnU37g04-e20ckJvtEJQQDm6g',
-    appId: '1:1063827736478:web:411dded637063c5665388f',
-    messagingSenderId: '1063827736478',
-    projectId: 'cerd-theemergencyresponse',
-    authDomain: 'cerd-theemergencyresponse.firebaseapp.com',
-    storageBucket: 'cerd-theemergencyresponse.firebasestorage.app',
-    measurementId: 'G-H86T5CGPGQ',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    authDomain: 'cerd-95f4e.firebaseapp.com',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
 }
