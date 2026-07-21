@@ -41,11 +41,14 @@ jobs:
 
       - run: flutter build apk --release
 
-      - name: Delete old release
-        uses: andelf/nightly-release@main
-        with:
-          tag_name: latest
-          name: 'Latest APK'
-          body: 'Auto-built APK from latest commit'
-          files: build/app/outputs/flutter-apk/app-release.apk
-          delete_release: true
+      - name: Create/Update Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo ${{ github.repository }} --yes 2>/dev/null || true
+          gh release create latest \
+            --repo ${{ github.repository }} \
+            --title "Latest APK" \
+            --notes "Auto-built APK from commit ${{ github.sha }}" \
+            --latest \
+            build/app/outputs/flutter-apk/app-release.apk
