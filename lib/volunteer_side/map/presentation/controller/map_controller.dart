@@ -33,6 +33,7 @@ class MapCntrl extends GetxController {
   DateTime? _lastRouteFetchAt;
   LatLng? _lastRouteFetchFrom;
   bool _isFetchingRoute = false;
+  bool _isDisposed = false;
 
   @override
   void onInit() {
@@ -43,6 +44,7 @@ class MapCntrl extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
     positionStream?.cancel();
     super.onClose();
   }
@@ -204,10 +206,12 @@ class MapCntrl extends GetxController {
         accuracy: LocationAccuracy.best,
         distanceFilter: 5,
         forceLocationManager: false,
-        timeLimit: Duration(seconds: 10),
       ),
     ).listen(
       (Position pos) async {
+        if (_isDisposed) {
+          return;
+        }
         // Filter out inaccurate readings
         if (pos.accuracy > 50) {
           print('⚠️ Low accuracy (${pos.accuracy}m) - skipping');
@@ -217,27 +221,44 @@ class MapCntrl extends GetxController {
         print(
           '📍 Stream device location: ${pos.latitude}, ${pos.longitude}, Accuracy: ${pos.accuracy}m',
         );
-        currentLatLng.value = LatLng(pos.latitude, pos.longitude);
-        await _scheduleRouteRefresh();
 
-        Future.microtask(() async {
-          try {
-            await mapRepo.updateCurrentLocation(
-              lat: pos.latitude,
-              long: pos.longitude,
-            );
-            await fetchMapUsers();
-            print(
-              "✅ Location sent to backend: ${pos.latitude}, ${pos.longitude}",
-            );
-          } catch (e) {
-            print(" Error sending location: $e");
-          }
-        });
+        // Project GPS onto the existing route so icon follows the road path
+        final rawPos = LatLng(pos.latitude, pos.longitude);
+        if (activeRequest.value != null && shortestPathPoints.length >= 2) {
+          final projected = projectOnRoute(rawPos, shortestPathPoints);
+          currentLatLng.value = projected.key;
+        } else {
+          currentLatLng.value = rawPos;
+        }
+
+        if (activeRequest.value != null) {
+          await _scheduleRouteRefresh();
+        }
+
+        if (!_isDisposed) {
+          Future.microtask(() async {
+            try {
+              await mapRepo.updateCurrentLocation(
+                lat: pos.latitude,
+                long: pos.longitude,
+              );
+              await fetchMapUsers();
+              print(
+                "✅ Location sent to backend: ${pos.latitude}, ${pos.longitude}",
+              );
+            } catch (e) {
+              print(" Error sending location: $e");
+            }
+          });
+        }
       },
       onError: (e) {
-        print("❌ GPS Stream Error: $e");
+        print("❌ GPS Stream Error: $e, restarting in 3s...");
+        if (!_isDisposed) {
+          Future.delayed(const Duration(seconds: 3), _startPositionStream);
+        }
       },
+      cancelOnError: false,
     );
   }
 
@@ -315,10 +336,10 @@ class MapCntrl extends GetxController {
       final now = DateTime.now();
       final recentFetch =
           _lastRouteFetchAt != null &&
-          now.difference(_lastRouteFetchAt!) < const Duration(seconds: 12);
+          now.difference(_lastRouteFetchAt!) < const Duration(seconds: 8);
       final movedEnough =
           _lastRouteFetchFrom != null &&
-          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) > 35;
+          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) > 20;
       if (recentFetch && !movedEnough) {
         return;
       }
@@ -327,6 +348,11 @@ class MapCntrl extends GetxController {
     _isFetchingRoute = true;
     try {
       final route = await _fetchShortestPath(from: from, to: to);
+      // Guard: if request was cancelled during fetch, discard result
+      if (activeRequest.value == null || currentLatLng.value == null) {
+        shortestPathPoints.clear();
+        return;
+      }
       if (route.length >= 2) {
         shortestPathPoints.assignAll(route);
       } else {
@@ -335,6 +361,10 @@ class MapCntrl extends GetxController {
       _lastRouteFetchAt = DateTime.now();
       _lastRouteFetchFrom = from;
     } catch (_) {
+      if (activeRequest.value == null) {
+        shortestPathPoints.clear();
+        return;
+      }
       shortestPathPoints.assignAll([from, to]);
     } finally {
       _isFetchingRoute = false;
@@ -406,7 +436,128 @@ class MapCntrl extends GetxController {
 
     return points;
   }
-//completion pay count++ karta hai
+  // ---- Route path helpers ----
+
+  /// Project a point onto a polyline and return the interpolated position
+  /// along with the cumulative distance (in meters) from the start.
+  static MapEntry<LatLng, double> projectOnRoute(
+    LatLng point,
+    List<LatLng> polyline,
+  ) {
+    if (polyline.length < 2) return MapEntry(point, 0);
+
+    int segIdx = 0;
+    double segT = 0.0;
+    double minDistSq = double.infinity;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final a = polyline[i];
+      final b = polyline[i + 1];
+      final dx = b.longitude - a.longitude;
+      final dy = b.latitude - a.latitude;
+      final lenSq = dx * dx + dy * dy;
+
+      double t;
+      if (lenSq == 0) {
+        t = 0;
+      } else {
+        t = ((point.longitude - a.longitude) * dx +
+                (point.latitude - a.latitude) * dy) /
+            lenSq;
+        t = t.clamp(0.0, 1.0);
+      }
+
+      final projLng = a.longitude + t * dx;
+      final projLat = a.latitude + t * dy;
+      final dLng = point.longitude - projLng;
+      final dLat = point.latitude - projLat;
+      final distSq = dLng * dLng + dLat * dLat;
+
+      if (distSq < minDistSq) {
+        minDistSq = distSq;
+        segIdx = i;
+        segT = t;
+      }
+    }
+
+    double dist = 0;
+    for (int i = 0; i < segIdx; i++) {
+      dist += const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+    }
+    final segDist =
+        const Distance().as(LengthUnit.Meter, polyline[segIdx], polyline[segIdx + 1]);
+    dist += segDist * segT;
+
+    final projLng2 =
+        polyline[segIdx].longitude +
+        (polyline[segIdx + 1].longitude - polyline[segIdx].longitude) * segT;
+    final projLat2 =
+        polyline[segIdx].latitude +
+        (polyline[segIdx + 1].latitude - polyline[segIdx].latitude) * segT;
+
+    return MapEntry(LatLng(projLat2, projLng2), dist);
+  }
+
+  /// Get a point along a polyline at a given cumulative distance from start.
+  static LatLng pointAtDistOnRoute(List<LatLng> polyline, double targetDist) {
+    if (polyline.length < 2) {
+      return polyline.isNotEmpty ? polyline.first : LatLng(0, 0);
+    }
+    if (targetDist <= 0) return polyline.first;
+
+    double accumulated = 0;
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final segDist =
+          const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+      if (accumulated + segDist >= targetDist) {
+        final t = segDist > 0 ? (targetDist - accumulated) / segDist : 0;
+        return LatLng(
+          polyline[i].latitude +
+              (polyline[i + 1].latitude - polyline[i].latitude) * t,
+          polyline[i].longitude +
+              (polyline[i + 1].longitude - polyline[i].longitude) * t,
+        );
+      }
+      accumulated += segDist;
+    }
+    return polyline.last;
+  }
+
+  /// Truncate a polyline to only keep points from the given distance onward.
+  static List<LatLng> truncatePolylineFromDist(
+    List<LatLng> polyline,
+    double fromDist,
+  ) {
+    if (polyline.length < 2 || fromDist <= 0) return List.from(polyline);
+
+    final result = <LatLng>[];
+    double accumulated = 0;
+    bool added = false;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final segDist =
+          const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+      if (accumulated + segDist >= fromDist && !added) {
+        final t = segDist > 0 ? (fromDist - accumulated) / segDist : 0;
+        result.add(LatLng(
+          polyline[i].latitude +
+              (polyline[i + 1].latitude - polyline[i].latitude) * t,
+          polyline[i].longitude +
+              (polyline[i + 1].longitude - polyline[i].longitude) * t,
+        ));
+        added = true;
+      }
+      if (added) {
+        result.add(polyline[i + 1]);
+      }
+      accumulated += segDist;
+    }
+
+    if (result.isEmpty && polyline.isNotEmpty) result.add(polyline.last);
+    return result;
+  }
+
+  //completion pay count++ karta hai
   void _refreshVolunteerDashboard({bool completed = false}) {
     if (!Get.isRegistered<HomeController>()) {
       return;

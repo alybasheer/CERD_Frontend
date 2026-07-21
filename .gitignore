@@ -33,6 +33,13 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Android signing
+android/key.properties
+android/app/*.jks
+
+# Android Kotlin session cache
+android/.kotlin/
+
 # Symbolication related
 app.*.symbols
 

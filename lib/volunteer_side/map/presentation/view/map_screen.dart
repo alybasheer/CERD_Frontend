@@ -21,10 +21,20 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen>
+    with SingleTickerProviderStateMixin {
   late final MapCntrl mapCntrl;
   final flutterMapController = MapController();
   String? _lastCameraTarget;
+
+  late final AnimationController _animController;
+  LatLng? _smoothLatLng;
+  LatLng? _smoothTarget;
+
+  // Route-following animation state
+  List<LatLng>? _animRoute;
+  double _animFromDist = 0;
+  double _animToDist = 0;
 
   @override
   void initState() {
@@ -34,6 +44,95 @@ class _MapScreenState extends State<MapScreen> {
             ? Get.find<MapCntrl>()
             : Get.put(MapCntrl(), permanent: true);
     mapCntrl.setActiveRequestFromArguments(Get.arguments);
+
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animController.addListener(_onAnimate);
+    _animController.addStatusListener(_onAnimComplete);
+
+    ever(mapCntrl.currentLatLng, _onNewLocation);
+  }
+
+  void _onAnimComplete(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      // Truncate the route behind the icon after animation finishes
+      final route = mapCntrl.shortestPathPoints;
+      if (route.length >= 2 && _smoothLatLng != null) {
+        final projected = MapCntrl.projectOnRoute(_smoothLatLng!, route);
+        if (projected.value > 0) {
+          final truncated = MapCntrl.truncatePolylineFromDist(route, projected.value);
+          if (truncated.length >= 2) {
+            mapCntrl.shortestPathPoints.assignAll(truncated);
+          }
+        }
+      }
+      _animRoute = null;
+    }
+  }
+
+  void _onNewLocation(LatLng? newLoc) {
+    if (newLoc == null) {
+      _smoothLatLng = null;
+      _smoothTarget = null;
+      _animRoute = null;
+      return;
+    }
+    if (_animController.isAnimating) {
+      return;
+    }
+
+    _smoothTarget = newLoc;
+    final from = _smoothLatLng ?? newLoc;
+    if (from == newLoc) {
+      return;
+    }
+
+    // Snapshot the current route for animating along it
+    final route = mapCntrl.shortestPathPoints;
+    if (route.length >= 2) {
+      _animRoute = List.from(route);
+      _animFromDist = MapCntrl.projectOnRoute(from, _animRoute!).value;
+      _animToDist = MapCntrl.projectOnRoute(newLoc, _animRoute!).value;
+    } else {
+      _animRoute = null;
+    }
+
+    _animController.reset();
+    _animController.forward();
+  }
+
+  void _onAnimate() {
+    final eased = _easeInOutCubic(_animController.value);
+
+    if (_animRoute != null && _animRoute!.length >= 2) {
+      // Animate along the route polyline
+      final currentDist = _animFromDist + (_animToDist - _animFromDist) * eased;
+      _smoothLatLng = MapCntrl.pointAtDistOnRoute(_animRoute!, currentDist);
+    } else {
+      // Fallback: straight-line interpolation
+      final from = _smoothLatLng;
+      final to = _smoothTarget;
+      if (from == null || to == null) return;
+      _smoothLatLng = LatLng(
+        from.latitude + (to.latitude - from.latitude) * eased,
+        from.longitude + (to.longitude - from.longitude) * eased,
+      );
+    }
+    setState(() {});
+  }
+
+  static double _easeInOutCubic(double t) {
+    return t < 0.5
+        ? 4 * t * t * t
+        : 1 - (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) / 2;
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,7 +145,11 @@ class _MapScreenState extends State<MapScreen> {
         showBack: Get.currentRoute == RouteNames.map,
       ),
       body: Obx(() {
-        final latlng = mapCntrl.currentLatLng.value;
+        // Keep smooth position in sync when not animating
+        if (!_animController.isAnimating) {
+          _smoothLatLng = mapCntrl.currentLatLng.value;
+        }
+        final latlng = _smoothLatLng;
         final activeRequest = mapCntrl.activeRequest.value;
         final activeRequestLocation = mapCntrl.activeRequestLatLng;
         final routePoints = mapCntrl.activeRoutePoints;
