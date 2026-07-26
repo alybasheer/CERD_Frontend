@@ -18,11 +18,16 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   final MapController _mapController = MapController();
   String? _lastCameraKey;
 
+  TrackingController? _ctrl;
+
   @override
   void initState() {
     super.initState();
-    ever(Get.find<TrackingController>().volunteerPosition, _onPositionChanged);
-    ever(Get.find<TrackingController>().routePoints, (_) => _fitMap());
+    if (Get.isRegistered<TrackingController>()) {
+      _ctrl = Get.find<TrackingController>();
+      ever(_ctrl!.volunteerPosition, _onPositionChanged);
+      ever(_ctrl!.routePoints, (_) => _fitMap());
+    }
   }
 
   void _onPositionChanged(LatLng? pos) {
@@ -30,7 +35,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   }
 
   void _fitMap() {
-    final ctrl = Get.find<TrackingController>();
+    final ctrl = _ctrl;
+    if (ctrl == null) return;
     final vol = ctrl.volunteerPosition.value;
     final dest = ctrl.routePoints.isNotEmpty ? ctrl.routePoints.last : null;
     final all = [vol, dest].whereType<LatLng>().toList();
@@ -63,7 +69,15 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<TrackingController>();
+    final ctrl =
+        _ctrl ??
+        (Get.isRegistered<TrackingController>()
+            ? Get.find<TrackingController>()
+            : null);
+    if (ctrl == null)
+      return const Scaffold(
+        body: Center(child: Text('No active tracking session')),
+      );
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(

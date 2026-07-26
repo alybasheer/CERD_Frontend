@@ -31,6 +31,7 @@ class RequestHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    Get.put(trackingController);
     _connectFlowEvents();
     refreshDashboard();
   }
