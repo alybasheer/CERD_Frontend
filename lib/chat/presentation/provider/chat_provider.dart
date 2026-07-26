@@ -27,6 +27,12 @@ class ChatProvider extends GetxController {
   Stream<Map<String, dynamic>> get flowEventStream =>
       _socketService.flowEventStream;
 
+  Stream<Map<String, dynamic>> get volunteerLocationStream =>
+      _socketService.volunteerLocationStream;
+
+  Stream<Map<String, dynamic>> get trackingStatusStream =>
+      _socketService.trackingStatusStream;
+
   Timer? _typingTimer;
   String? _sessionUserId;
 
@@ -306,6 +312,26 @@ class ChatProvider extends GetxController {
         _socketService.emitTyping(receiverId: receiverId, isTyping: false);
       });
     }
+  }
+
+  void emitStartTracking(String requestId) {
+    _socketService.emitStartTracking(requestId);
+  }
+
+  void emitStopTracking(String requestId) {
+    _socketService.emitStopTracking(requestId);
+  }
+
+  void emitLocationUpdate({
+    required double latitude,
+    required double longitude,
+    required String requestId,
+  }) {
+    _socketService.emitLocationUpdate(
+      latitude: latitude,
+      longitude: longitude,
+      requestId: requestId,
+    );
   }
 
   // ============ UNREAD COUNT ============

@@ -16,4 +16,5 @@ class RouteNames {
   static const String waitingScreen = '/waitingScreen';
   static const String profile = '/profile';
   static const String requestHome = '/requestHome';
+  static const String trackingMap = '/trackingMap';
 }

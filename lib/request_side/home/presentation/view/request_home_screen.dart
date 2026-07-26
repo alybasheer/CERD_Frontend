@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
+import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
+import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:get/get.dart';
 import 'package:fyp_source_code/request_side/home/presentation/controller/request_home_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
@@ -7,6 +10,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
+import 'package:latlong2/latlong.dart';
 
 class RequestHomeScreen extends StatelessWidget {
   const RequestHomeScreen({super.key});
@@ -46,6 +50,7 @@ class RequestHomeScreen extends StatelessWidget {
                 _EmptyBox(text: 'request.home.nearby.empty'.tr)
               else
                 ...controller.nearbyVolunteers.map(_VolunteerTile.new),
+              _TrackingMapSection(controller: controller.trackingController),
               if (controller.activeRequests.isNotEmpty) ...[
                 SizedBox(height: AppSize.lH),
                 _SectionTitle(title: 'request.home.active_requests'.tr),
@@ -69,6 +74,200 @@ class RequestHomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _TrackingMapSection extends StatelessWidget {
+  final TrackingController controller;
+
+  const _TrackingMapSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (!controller.isTracking.value) return const SizedBox.shrink();
+
+      final volPos = controller.volunteerPosition.value;
+      final destination =
+          controller.routePoints.isNotEmpty
+              ? controller.routePoints.last
+              : null;
+      final dist = controller.remainingDistanceKm.value;
+      final eta = controller.remainingMinutes.value;
+      final status = controller.trackingStatus.value;
+      final route = controller.routePoints;
+      final traveled = controller.traveledPoints;
+
+      return Container(
+        height: 260,
+        margin: EdgeInsets.only(bottom: AppSize.sH),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor),
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 32,
+              padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+              decoration: BoxDecoration(
+                color:
+                    status == 'arrived'
+                        ? AppColors.reliefGreen.withValues(alpha: 0.12)
+                        : AppColors.steelBlue.withValues(alpha: 0.10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    status == 'arrived'
+                        ? Icons.check_circle
+                        : Icons.location_on,
+                    size: 16,
+                    color:
+                        status == 'arrived'
+                            ? AppColors.reliefGreen
+                            : AppColors.steelBlue,
+                  ),
+                  SizedBox(width: AppSize.xs),
+                  Text(
+                    status == 'arrived'
+                        ? 'Volunteer arrived'
+                        : 'Volunteer en route',
+                    style: AppTextStyling.body_12S.copyWith(
+                      color:
+                          status == 'arrived'
+                              ? AppColors.reliefGreen
+                              : AppColors.steelBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Spacer(),
+                  if (dist != null)
+                    Text(
+                      '${dist.toStringAsFixed(1)} km',
+                      style: AppTextStyling.body_12S.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (eta != null) ...[
+                    SizedBox(width: AppSize.xs),
+                    Text(
+                      '~$eta min',
+                      style: AppTextStyling.body_12S.copyWith(
+                        color: AppColors.mediumGray,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              height: 32,
+              padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => Get.toNamed(RouteNames.trackingMap),
+                    icon: const Icon(Icons.fullscreen, size: 16),
+                    label: const Text('View Map'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.steelBlue,
+                      padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+                      textStyle: AppTextStyling.body_12S.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter:
+                      volPos ?? destination ?? const LatLng(31.52, 74.35),
+                  initialZoom: 14,
+                  minZoom: 1,
+                  maxZoom: 19,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.fyp.volunteer_emergency_network',
+                  ),
+                  if (route.length >= 2)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: route,
+                          strokeWidth: 5,
+                          color: AppColors.steelBlue.withValues(alpha: 0.6),
+                          borderStrokeWidth: 2,
+                          borderColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                  if (traveled.length >= 2)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: traveled,
+                          strokeWidth: 4,
+                          color: AppColors.mediumGray.withValues(alpha: 0.5),
+                          borderStrokeWidth: 1,
+                          borderColor: Colors.white.withValues(alpha: 0.3),
+                          isDotted: true,
+                        ),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      if (volPos != null)
+                        Marker(
+                          point: volPos,
+                          width: 28,
+                          height: 28,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.reliefGreen,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.reliefGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (destination != null && route.length >= 2)
+                        Marker(
+                          point: destination,
+                          width: 24,
+                          height: 24,
+                          child: Icon(
+                            Icons.location_on,
+                            color: AppColors.emergencyRed,
+                            size: 28,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 

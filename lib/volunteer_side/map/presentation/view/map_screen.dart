@@ -62,7 +62,10 @@ class _MapScreenState extends State<MapScreen>
       if (route.length >= 2 && _smoothLatLng != null) {
         final projected = MapCntrl.projectOnRoute(_smoothLatLng!, route);
         if (projected.value > 0) {
-          final truncated = MapCntrl.truncatePolylineFromDist(route, projected.value);
+          final truncated = MapCntrl.truncatePolylineFromDist(
+            route,
+            projected.value,
+          );
           if (truncated.length >= 2) {
             mapCntrl.shortestPathPoints.assignAll(truncated);
           }
@@ -564,6 +567,25 @@ class _ActiveRequestPanel extends StatelessWidget {
                       label: Text(isCompleting ? 'Completing' : 'Done'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.reliefGreen,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSize.sH),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          isBusy
+                              ? null
+                              : () => Get.find<MapCntrl>().startLiveTracking(),
+                      icon: const Icon(Icons.navigation, size: 18),
+                      label: const Text('Navigate'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.steelBlue,
                         foregroundColor: Colors.white,
                       ),
                     ),

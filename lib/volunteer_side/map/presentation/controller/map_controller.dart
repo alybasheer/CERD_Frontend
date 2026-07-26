@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
@@ -29,6 +30,7 @@ class MapCntrl extends GetxController {
   final RxBool isCancelling = false.obs;
   final RxString selectedRoleFilter = 'all'.obs;
   final RxList<LatLng> shortestPathPoints = <LatLng>[].obs;
+  final RxBool isTracking = false.obs;
   StreamSubscription<Position>? positionStream;
   DateTime? _lastRouteFetchAt;
   LatLng? _lastRouteFetchFrom;
@@ -96,6 +98,34 @@ class MapCntrl extends GetxController {
     activeRequest.value = request;
     _storage.saveData(_activeRequestStorageKey, request.toJson());
     _scheduleRouteRefresh(force: true);
+  }
+
+  void startLiveTracking() {
+    final requestId = activeRequest.value?.sId?.trim();
+    if (requestId == null || requestId.isEmpty) return;
+    isTracking.value = true;
+    try {
+      final provider =
+          Get.isRegistered<ChatProvider>()
+              ? Get.find<ChatProvider>()
+              : Get.put(ChatProvider());
+      provider.emitStartTracking(requestId);
+      ToastHelper.showSuccess('Live tracking started');
+    } catch (_) {}
+  }
+
+  void stopLiveTracking() {
+    final requestId = activeRequest.value?.sId?.trim();
+    if (requestId == null || requestId.isEmpty) return;
+    isTracking.value = false;
+    try {
+      final provider =
+          Get.isRegistered<ChatProvider>()
+              ? Get.find<ChatProvider>()
+              : Get.put(ChatProvider());
+      provider.emitStopTracking(requestId);
+      ToastHelper.showSuccess('Tracking ended');
+    } catch (_) {}
   }
 
   Future<void> completeActiveRequest() async {
@@ -236,6 +266,7 @@ class MapCntrl extends GetxController {
         }
 
         if (!_isDisposed) {
+          final currentPosition = LatLng(pos.latitude, pos.longitude);
           Future.microtask(() async {
             try {
               await mapRepo.updateCurrentLocation(
@@ -243,13 +274,26 @@ class MapCntrl extends GetxController {
                 long: pos.longitude,
               );
               await fetchMapUsers();
-              print(
-                "✅ Location sent to backend: ${pos.latitude}, ${pos.longitude}",
-              );
             } catch (e) {
               print(" Error sending location: $e");
             }
           });
+
+          if (isTracking.value &&
+              activeRequest.value?.sId != null &&
+              activeRequest.value!.sId!.trim().isNotEmpty) {
+            try {
+              final provider =
+                  Get.isRegistered<ChatProvider>()
+                      ? Get.find<ChatProvider>()
+                      : Get.put(ChatProvider());
+              provider.emitLocationUpdate(
+                latitude: pos.latitude,
+                longitude: pos.longitude,
+                requestId: activeRequest.value!.sId!.trim(),
+              );
+            } catch (_) {}
+          }
         }
       },
       onError: (e) {
@@ -319,7 +363,7 @@ class MapCntrl extends GetxController {
     _storage.removeData(_activeRequestStorageKey);
   }
 
-//Fetch dobra karna chaiye ya nahi
+  //Fetch dobra karna chaiye ya nahi
 
   Future<void> _scheduleRouteRefresh({bool force = false}) async {
     final from = currentLatLng.value;
@@ -339,7 +383,8 @@ class MapCntrl extends GetxController {
           now.difference(_lastRouteFetchAt!) < const Duration(seconds: 8);
       final movedEnough =
           _lastRouteFetchFrom != null &&
-          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) > 20;
+          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) >
+              20;
       if (recentFetch && !movedEnough) {
         return;
       }
@@ -461,7 +506,8 @@ class MapCntrl extends GetxController {
       if (lenSq == 0) {
         t = 0;
       } else {
-        t = ((point.longitude - a.longitude) * dx +
+        t =
+            ((point.longitude - a.longitude) * dx +
                 (point.latitude - a.latitude) * dy) /
             lenSq;
         t = t.clamp(0.0, 1.0);
@@ -482,10 +528,17 @@ class MapCntrl extends GetxController {
 
     double dist = 0;
     for (int i = 0; i < segIdx; i++) {
-      dist += const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+      dist += const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
     }
-    final segDist =
-        const Distance().as(LengthUnit.Meter, polyline[segIdx], polyline[segIdx + 1]);
+    final segDist = const Distance().as(
+      LengthUnit.Meter,
+      polyline[segIdx],
+      polyline[segIdx + 1],
+    );
     dist += segDist * segT;
 
     final projLng2 =
@@ -507,8 +560,11 @@ class MapCntrl extends GetxController {
 
     double accumulated = 0;
     for (int i = 0; i < polyline.length - 1; i++) {
-      final segDist =
-          const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+      final segDist = const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
       if (accumulated + segDist >= targetDist) {
         final t = segDist > 0 ? (targetDist - accumulated) / segDist : 0;
         return LatLng(
@@ -535,16 +591,21 @@ class MapCntrl extends GetxController {
     bool added = false;
 
     for (int i = 0; i < polyline.length - 1; i++) {
-      final segDist =
-          const Distance().as(LengthUnit.Meter, polyline[i], polyline[i + 1]);
+      final segDist = const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
       if (accumulated + segDist >= fromDist && !added) {
         final t = segDist > 0 ? (fromDist - accumulated) / segDist : 0;
-        result.add(LatLng(
-          polyline[i].latitude +
-              (polyline[i + 1].latitude - polyline[i].latitude) * t,
-          polyline[i].longitude +
-              (polyline[i + 1].longitude - polyline[i].longitude) * t,
-        ));
+        result.add(
+          LatLng(
+            polyline[i].latitude +
+                (polyline[i + 1].latitude - polyline[i].latitude) * t,
+            polyline[i].longitude +
+                (polyline[i + 1].longitude - polyline[i].longitude) * t,
+          ),
+        );
         added = true;
       }
       if (added) {

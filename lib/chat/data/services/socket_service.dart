@@ -13,12 +13,20 @@ class SocketService {
   final _connectionController = StreamController<bool>.broadcast();
   final _flowEventController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _volunteerLocationController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _trackingStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Message> get messageStream => _messageController.stream;
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<Map<String, dynamic>> get flowEventStream =>
       _flowEventController.stream;
+  Stream<Map<String, dynamic>> get volunteerLocationStream =>
+      _volunteerLocationController.stream;
+  Stream<Map<String, dynamic>> get trackingStatusStream =>
+      _trackingStatusController.stream;
 
   bool get isConnected => _isInitialized && _socket.connected;
 
@@ -122,6 +130,22 @@ class SocketService {
     _listenToFlowEvent('help_request_accepted');
     _listenToFlowEvent('help_request_resolved');
     _listenToFlowEvent('new_alert');
+
+    _socket.on('volunteer_location', (data) {
+      try {
+        _volunteerLocationController.add(Map<String, dynamic>.from(data));
+      } catch (e) {
+        print('Error parsing volunteer_location: $e');
+      }
+    });
+
+    _socket.on('tracking_status', (data) {
+      try {
+        _trackingStatusController.add(Map<String, dynamic>.from(data));
+      } catch (e) {
+        print('Error parsing tracking_status: $e');
+      }
+    });
   }
 
   void _listenToFlowEvent(String eventName) {
@@ -168,6 +192,29 @@ class SocketService {
     _socket.emit('get_conversation', {
       'otherUserId': otherUserId,
       'limit': limit,
+    });
+  }
+
+  void emitStartTracking(String requestId) {
+    if (!_isInitialized) return;
+    _socket.emit('start_tracking', {'requestId': requestId});
+  }
+
+  void emitStopTracking(String requestId) {
+    if (!_isInitialized) return;
+    _socket.emit('stop_tracking', {'requestId': requestId});
+  }
+
+  void emitLocationUpdate({
+    required double latitude,
+    required double longitude,
+    required String requestId,
+  }) {
+    if (!_isInitialized) return;
+    _socket.emit('update_location', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'requestId': requestId,
     });
   }
 

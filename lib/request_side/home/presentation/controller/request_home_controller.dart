@@ -6,14 +6,17 @@ import 'package:fyp_source_code/request_side/create_help_request/data/model/help
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
 import 'package:fyp_source_code/request_side/create_help_request/presentation/controller/request_help_controller.dart';
 import 'package:fyp_source_code/request_side/create_help_request/presentation/view/request_help_sheet.dart';
+import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 
 class RequestHomeController extends GetxController {
   final HelpRequestRepo _repo = HelpRequestRepo();
+  final TrackingController trackingController = TrackingController();
 
   final activeRequests = <HelpRequest>[].obs;
   final nearbyVolunteers = <NearbyVolunteer>[].obs;
@@ -197,8 +200,12 @@ class RequestHomeController extends GetxController {
       if (eventName == 'help_request_accepted' || eventName == 'new_alert') {
         refreshDashboard();
       }
+      if (eventName == 'help_request_accepted') {
+        _startTrackingAcceptedRequest(event['data']);
+      }
       if (eventName == 'help_request_resolved') {
         refreshDashboard();
+        trackingController.stopTracking();
         final requestId = _extractRequestId(event['data']);
         if (requestId != null && !_ratingPrompted.contains(requestId)) {
           _ratingPrompted.add(requestId);
@@ -256,6 +263,19 @@ class RequestHomeController extends GetxController {
       textCancel: 'Later',
       confirmTextColor: Colors.white,
       onConfirm: () => submitRating(requestId),
+    );
+  }
+
+  void _startTrackingAcceptedRequest(dynamic data) {
+    final requestId = _extractRequestId(data);
+    if (requestId == null) return;
+    final accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
+    if (accepted == null) return;
+    final loc = accepted.location;
+    if (loc?.latitude == null || loc?.longitude == null) return;
+    trackingController.startTracking(
+      requestId,
+      LatLng(loc!.latitude!, loc.longitude!),
     );
   }
 
