@@ -23,6 +23,14 @@ class TrackingController extends GetxController {
   StreamSubscription<Map<String, dynamic>>? _locationSub;
   StreamSubscription<Map<String, dynamic>>? _statusSub;
 
+  static double? _readDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
   @override
   void onClose() {
     _locationSub?.cancel();

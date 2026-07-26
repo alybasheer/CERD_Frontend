@@ -201,8 +201,8 @@ class _TrackingMapSection extends StatelessWidget {
                   ),
                   if (route.length >= 2)
                     PolylineLayer(
-                      polylines: [
-                        Polyline(
+                      polylines: <Polyline<Object>>[
+                        Polyline<Object>(
                           points: route,
                           strokeWidth: 5,
                           color: AppColors.steelBlue.withValues(alpha: 0.6),
@@ -213,14 +213,13 @@ class _TrackingMapSection extends StatelessWidget {
                     ),
                   if (traveled.length >= 2)
                     PolylineLayer(
-                      polylines: [
-                        Polyline(
+                      polylines: <Polyline<Object>>[
+                        Polyline<Object>(
                           points: traveled,
                           strokeWidth: 4,
                           color: AppColors.mediumGray.withValues(alpha: 0.5),
                           borderStrokeWidth: 1,
                           borderColor: Colors.white.withValues(alpha: 0.3),
-                          isDotted: true,
                         ),
                       ],
                     ),

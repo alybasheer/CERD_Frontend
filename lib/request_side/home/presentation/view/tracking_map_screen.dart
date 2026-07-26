@@ -118,8 +118,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                 ),
                 if (route.length >= 2)
                   PolylineLayer(
-                    polylines: [
-                      Polyline(
+                    polylines: <Polyline<Object>>[
+                      Polyline<Object>(
                         points: route,
                         strokeWidth: 6,
                         color: AppColors.steelBlue.withValues(alpha: 0.7),
@@ -130,14 +130,13 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                   ),
                 if (traveled.length >= 2)
                   PolylineLayer(
-                    polylines: [
-                      Polyline(
+                    polylines: <Polyline<Object>>[
+                      Polyline<Object>(
                         points: traveled,
                         strokeWidth: 5,
                         color: AppColors.mediumGray.withValues(alpha: 0.5),
                         borderStrokeWidth: 1,
                         borderColor: Colors.white.withValues(alpha: 0.3),
-                        isDotted: true,
                       ),
                     ],
                   ),
