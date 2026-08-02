@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/network/get_dio.dart';
-import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:get/get.dart';
@@ -32,6 +32,7 @@ class AppUpdateService {
   bool _isChecking = false;
 
   Future<UpdateInfo?> checkForUpdate() async {
+    if (kIsWeb) return null;
     if (_isChecking) return null;
     _isChecking = true;
     try {
@@ -72,6 +73,7 @@ class AppUpdateService {
   }
 
   Future<void> promptUpdate(UpdateInfo info) async {
+    if (kIsWeb) return;
     final confirmed = await Get.dialog<bool>(
       PopScope(
         canPop: false,
@@ -121,6 +123,7 @@ class AppUpdateService {
   }
 
   Future<void> _downloadAndInstall(String url) async {
+    if (kIsWeb) return;
     if (url.isEmpty) {
       ToastHelper.showError('Download URL not available');
       return;
@@ -160,8 +163,11 @@ class AppUpdateService {
         ),
       );
 
-      if (filePath != null && await File(filePath).exists()) {
-        await OpenFilex.open(filePath);
+      if (filePath != null) {
+        final file = File(filePath);
+        if (await file.exists()) {
+          await OpenFilex.open(filePath);
+        }
       }
     } catch (e) {
       ToastHelper.showError('Download failed. Please try again later.');

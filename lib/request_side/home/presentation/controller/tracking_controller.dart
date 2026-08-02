@@ -2,14 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
-import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class TrackingController extends GetxController {
-  final HelpRequestRepo _repo = HelpRequestRepo();
-
   final Rx<LatLng?> volunteerPosition = Rx<LatLng?>(null);
   final RxString trackingStatus = 'idle'.obs;
   final Rx<double?> remainingDistanceKm = Rx<double?>(null);
@@ -22,6 +19,14 @@ class TrackingController extends GetxController {
   LatLng? _destination;
   StreamSubscription<Map<String, dynamic>>? _locationSub;
   StreamSubscription<Map<String, dynamic>>? _statusSub;
+  bool _isFetchingRoute = false;
+  DateTime? _lastRouteFetchAt;
+  LatLng? _lastRouteRefetchFrom;
+
+  static const double _refetchDistanceMeters = 60;
+  static const Duration _refetchInterval = Duration(seconds: 15);
+
+  String? get currentRequestId => _currentRequestId;
 
   static double? _readDouble(dynamic value) {
     if (value == null) return null;
@@ -43,6 +48,14 @@ class TrackingController extends GetxController {
     _destination = destination;
     isTracking.value = true;
     trackingStatus.value = 'en_route';
+    routePoints.clear();
+    traveledPoints.clear();
+    volunteerPosition.value = null;
+    remainingDistanceKm.value = null;
+    remainingMinutes.value = null;
+    _isFetchingRoute = false;
+    _lastRouteFetchAt = null;
+    _lastRouteRefetchFrom = null;
 
     final provider =
         Get.isRegistered<ChatProvider>()
@@ -58,21 +71,25 @@ class TrackingController extends GetxController {
 
       final pos = LatLng(lat, lng);
       volunteerPosition.value = pos;
-      _updateRemainingDistance(pos);
 
-      if (_destination != null) {
-        _updateRouteFromApi(pos, _destination!);
+      final destination = _destination;
+      if (destination == null) return;
+
+      if (routePoints.length < 2) {
+        // First location - fetch the full route from the volunteer's position.
+        _fetchFullRoute(pos, destination);
+      } else {
+        _updateRouteProgress(pos);
       }
+      _updateRemainingDistance(pos);
     });
 
     _statusSub?.cancel();
     _statusSub = provider.trackingStatusStream.listen((data) {
       if (data['requestId']?.toString() != requestId) return;
       final status = data['status']?.toString() ?? 'idle';
+      print('📍 [TrackingStatus] $status for $requestId');
       trackingStatus.value = status;
-      if (status == 'arrived') {
-        isTracking.value = false;
-      }
     });
   }
 
@@ -90,18 +107,101 @@ class TrackingController extends GetxController {
     _destination = null;
   }
 
-  void _updateRemainingDistance(LatLng current) {
-    if (_destination == null) return;
-    final dist = const Distance().as(
-      LengthUnit.Kilometer,
-      current,
-      _destination!,
+  /// Split the current full route at the volunteer's position:
+  /// - `traveledPoints` = portion already behind the volunteer
+  /// - `routePoints` stays as the full route (volunteer -> destination)
+  /// If the volunteer is clearly off the route, re-fetch a new route (throttled).
+  void _updateRouteProgress(LatLng pos) {
+    final route = List<LatLng>.from(routePoints);
+    final destination = _destination;
+    if (route.length < 2 || destination == null) return;
+
+    final projected = _projectOnRoute(pos, route);
+    final projPoint = projected.key;
+    final traveledDist = projected.value;
+
+    final traveled = <LatLng>[];
+    var inserted = false;
+    double accumulated = 0;
+    for (int i = 0; i < route.length - 1; i++) {
+      final segDist = const Distance().as(
+        LengthUnit.Meter,
+        route[i],
+        route[i + 1],
+      );
+      if (accumulated + segDist >= traveledDist) {
+        traveled.add(projPoint);
+        inserted = true;
+        break;
+      }
+      traveled.add(route[i]);
+      accumulated += segDist;
+    }
+    if (!inserted) traveled.add(route.last);
+    if (traveled.length < 2) traveled.clear();
+    traveledPoints.assignAll(traveled);
+
+    final offRouteMeters = const Distance().as(
+      LengthUnit.Meter,
+      pos,
+      projPoint,
     );
-    remainingDistanceKm.value = double.parse(dist.toStringAsFixed(1));
-    remainingMinutes.value = (dist / 30 * 60).round().clamp(1, 999);
+    final now = DateTime.now();
+    final intervalElapsed =
+        _lastRouteFetchAt == null ||
+        now.difference(_lastRouteFetchAt!) >= _refetchInterval;
+    final movedEnough =
+        _lastRouteRefetchFrom == null ||
+        const Distance().as(
+              LengthUnit.Meter,
+              _lastRouteRefetchFrom!,
+              pos,
+            ) >=
+            _refetchDistanceMeters;
+    if (offRouteMeters > 40 && intervalElapsed && movedEnough) {
+      _lastRouteRefetchFrom = pos;
+      _fetchFullRoute(pos, destination);
+    }
   }
 
-  Future<void> _updateRouteFromApi(LatLng from, LatLng to) async {
+  /// Distance/ETA along the route (fallback: straight line).
+  void _updateRemainingDistance(LatLng current) {
+    final destination = _destination;
+    if (destination == null) return;
+
+    double remainingMeters;
+    final route = routePoints;
+    if (route.length >= 2) {
+      double total = 0;
+      for (int i = 0; i < route.length - 1; i++) {
+        total += const Distance().as(
+          LengthUnit.Meter,
+          route[i],
+          route[i + 1],
+        );
+      }
+      final traveled = _projectOnRoute(current, route).value;
+      remainingMeters = (total - traveled).clamp(0.0, double.infinity);
+    } else {
+      remainingMeters = const Distance().as(
+        LengthUnit.Meter,
+        current,
+        destination,
+      );
+    }
+
+    remainingDistanceKm.value = double.parse(
+      (remainingMeters / 1000).toStringAsFixed(1),
+    );
+    remainingMinutes.value = (remainingMeters / 1000 / 30 * 60).round().clamp(
+      1,
+      999,
+    );
+  }
+
+  Future<void> _fetchFullRoute(LatLng from, LatLng to) async {
+    if (_isFetchingRoute) return;
+    _isFetchingRoute = true;
     try {
       final uri = Uri.parse(
         'https://router.project-osrm.org/route/v1/driving/'
@@ -123,19 +223,19 @@ class TrackingController extends GetxController {
       if (decoded.length < 2) return;
 
       routePoints.assignAll(decoded);
+      traveledPoints.clear();
+      _lastRouteFetchAt = DateTime.now();
 
-      final projected = _projectOnRoute(from, decoded);
-      final traveledDist = projected.value;
-      if (traveledDist > 0) {
-        final truncated = _truncatePolylineFromDist(decoded, traveledDist);
-        traveledPoints.assignAll(
-          decoded.sublist(0, decoded.length - truncated.length),
-        );
-        if (traveledPoints.length < 2) traveledPoints.clear();
-      } else {
-        traveledPoints.clear();
+      // Re-split immediately so the traveled line starts at the right place.
+      final pos = volunteerPosition.value;
+      if (pos != null) _updateRouteProgress(pos);
+    } catch (_) {
+      if (routePoints.length < 2) {
+        routePoints.assignAll([from, to]);
       }
-    } catch (_) {}
+    } finally {
+      _isFetchingRoute = false;
+    }
   }
 
   List<LatLng> _decodeRoute(String body) {
@@ -214,38 +314,5 @@ class TrackingController extends GetxController {
         polyline[segIdx].latitude +
         (polyline[segIdx + 1].latitude - polyline[segIdx].latitude) * segT;
     return MapEntry(LatLng(projLat2, projLng2), dist);
-  }
-
-  static List<LatLng> _truncatePolylineFromDist(
-    List<LatLng> polyline,
-    double fromDist,
-  ) {
-    if (polyline.length < 2 || fromDist <= 0) return List.from(polyline);
-    final result = <LatLng>[];
-    double accumulated = 0;
-    bool added = false;
-    for (int i = 0; i < polyline.length - 1; i++) {
-      final segDist = const Distance().as(
-        LengthUnit.Meter,
-        polyline[i],
-        polyline[i + 1],
-      );
-      if (accumulated + segDist >= fromDist && !added) {
-        final t = segDist > 0 ? (fromDist - accumulated) / segDist : 0;
-        result.add(
-          LatLng(
-            polyline[i].latitude +
-                (polyline[i + 1].latitude - polyline[i].latitude) * t,
-            polyline[i].longitude +
-                (polyline[i + 1].longitude - polyline[i].longitude) * t,
-          ),
-        );
-        added = true;
-      }
-      if (added) result.add(polyline[i + 1]);
-      accumulated += segDist;
-    }
-    if (result.isEmpty && polyline.isNotEmpty) result.add(polyline.last);
-    return result;
   }
 }

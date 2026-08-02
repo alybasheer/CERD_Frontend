@@ -262,11 +262,12 @@ class MapCntrl extends GetxController {
         }
 
         if (activeRequest.value != null) {
-          await _scheduleRouteRefresh();
+          // Route must re-anchor at the TRUE GPS position so the path
+          // actually updates when the volunteer drives off the old route.
+          await _scheduleRouteRefresh(from: rawPos);
         }
 
         if (!_isDisposed) {
-          final currentPosition = LatLng(pos.latitude, pos.longitude);
           Future.microtask(() async {
             try {
               await mapRepo.updateCurrentLocation(
@@ -365,10 +366,13 @@ class MapCntrl extends GetxController {
 
   //Fetch dobra karna chaiye ya nahi
 
-  Future<void> _scheduleRouteRefresh({bool force = false}) async {
-    final from = currentLatLng.value;
+  Future<void> _scheduleRouteRefresh({
+    bool force = false,
+    LatLng? from,
+  }) async {
+    final routeFrom = from ?? currentLatLng.value;
     final to = activeRequestLatLng;
-    if (from == null || to == null) {
+    if (routeFrom == null || to == null) {
       shortestPathPoints.clear();
       return;
     }
@@ -383,7 +387,7 @@ class MapCntrl extends GetxController {
           now.difference(_lastRouteFetchAt!) < const Duration(seconds: 8);
       final movedEnough =
           _lastRouteFetchFrom != null &&
-          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) >
+          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, routeFrom) >
               20;
       if (recentFetch && !movedEnough) {
         return;
@@ -392,7 +396,7 @@ class MapCntrl extends GetxController {
 
     _isFetchingRoute = true;
     try {
-      final route = await _fetchShortestPath(from: from, to: to);
+      final route = await _fetchShortestPath(from: routeFrom, to: to);
       // Guard: if request was cancelled during fetch, discard result
       if (activeRequest.value == null || currentLatLng.value == null) {
         shortestPathPoints.clear();
@@ -401,16 +405,16 @@ class MapCntrl extends GetxController {
       if (route.length >= 2) {
         shortestPathPoints.assignAll(route);
       } else {
-        shortestPathPoints.assignAll([from, to]);
+        shortestPathPoints.assignAll([routeFrom, to]);
       }
       _lastRouteFetchAt = DateTime.now();
-      _lastRouteFetchFrom = from;
+      _lastRouteFetchFrom = routeFrom;
     } catch (_) {
       if (activeRequest.value == null) {
         shortestPathPoints.clear();
         return;
       }
-      shortestPathPoints.assignAll([from, to]);
+      shortestPathPoints.assignAll([routeFrom, to]);
     } finally {
       _isFetchingRoute = false;
     }

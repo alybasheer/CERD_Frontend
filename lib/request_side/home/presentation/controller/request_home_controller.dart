@@ -16,7 +16,15 @@ import 'package:latlong2/latlong.dart';
 
 class RequestHomeController extends GetxController {
   final HelpRequestRepo _repo = HelpRequestRepo();
-  final TrackingController trackingController = TrackingController();
+
+  /// Single shared tracking instance (registered permanent so it survives
+  /// screen navigation and is reused across controllers/screens).
+  TrackingController get trackingController {
+    if (!Get.isRegistered<TrackingController>()) {
+      Get.put(TrackingController(), permanent: true);
+    }
+    return Get.find<TrackingController>();
+  }
 
   final activeRequests = <HelpRequest>[].obs;
   final nearbyVolunteers = <NearbyVolunteer>[].obs;
@@ -31,7 +39,6 @@ class RequestHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    Get.put(trackingController);
     _connectFlowEvents();
     refreshDashboard();
   }
@@ -196,16 +203,17 @@ class RequestHomeController extends GetxController {
         Get.isRegistered<ChatProvider>()
             ? Get.find<ChatProvider>()
             : Get.put(ChatProvider());
-    _flowSubscription = provider.flowEventStream.listen((event) {
+    _flowSubscription = provider.flowEventStream.listen((event) async {
       final eventName = event['event']?.toString();
+      print('🔔 [FlowEvent] $eventName -> ${event['data']}');
       if (eventName == 'help_request_accepted' || eventName == 'new_alert') {
-        refreshDashboard();
+        await refreshDashboard();
       }
       if (eventName == 'help_request_accepted') {
-        _startTrackingAcceptedRequest(event['data']);
+        await _startTrackingAcceptedRequest(event['data']);
       }
       if (eventName == 'help_request_resolved') {
-        refreshDashboard();
+        await refreshDashboard();
         trackingController.stopTracking();
         final requestId = _extractRequestId(event['data']);
         if (requestId != null && !_ratingPrompted.contains(requestId)) {
@@ -267,13 +275,30 @@ class RequestHomeController extends GetxController {
     );
   }
 
-  void _startTrackingAcceptedRequest(dynamic data) {
+  Future<void> _startTrackingAcceptedRequest(dynamic data) async {
     final requestId = _extractRequestId(data);
-    if (requestId == null) return;
-    final accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
-    if (accepted == null) return;
+    if (requestId == null || requestId.isEmpty) return;
+
+    // Already tracking this request - don't restart.
+    if (trackingController.isTracking.value &&
+        trackingController.currentRequestId == requestId) {
+      return;
+    }
+
+    var accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
+    if (accepted == null) {
+      // The dashboard refresh may not have completed yet - retry once.
+      await refreshDashboard();
+      accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
+    }
+    if (accepted == null) {
+      print('⚠️ Accepted request $requestId not found in dashboard list.');
+      return;
+    }
     final loc = accepted.location;
     if (loc?.latitude == null || loc?.longitude == null) return;
+
+    print('📍 Starting live tracking for request $requestId');
     trackingController.startTracking(
       requestId,
       LatLng(loc!.latitude!, loc.longitude!),

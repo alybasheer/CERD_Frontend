@@ -5,6 +5,7 @@ import 'package:fyp_source_code/auth/data/models/signin_model.dart';
 import 'package:fyp_source_code/auth/data/repo/login-_repo.dart';
 import 'package:fyp_source_code/auth/data/repo/signup_repo.dart';
 import 'package:fyp_source_code/network/api_service.dart';
+import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/auth_service.dart';
@@ -342,6 +343,10 @@ class AuthController extends GetxController {
   // ============ LOGOUT ============
   Future<void> logout() async {
     try {
+      if (Get.isRegistered<TrackingController>()) {
+        Get.find<TrackingController>().stopTracking();
+        Get.delete<TrackingController>(force: true);
+      }
       await AuthService().signOut();
       StorageHelper().clearSessionData();
       userRole.value = '';
