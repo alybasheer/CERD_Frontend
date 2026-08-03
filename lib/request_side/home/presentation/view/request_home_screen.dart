@@ -295,11 +295,51 @@ class _SosEmergencyBar extends StatelessWidget {
       child: Obx(() {
         final isSending = controller.isSendingSos.value;
 
-        return _SosPulseButton(
-          isSending: isSending,
-          onPressed: isSending ? null : controller.sendSos,
+        return Row(
+          children: [
+            Expanded(
+              child: _SosPulseButton(
+                isSending: isSending,
+                onPressed: isSending ? null : controller.sendSos,
+              ),
+            ),
+            SizedBox(width: AppSize.s),
+            _HelplineButton(onTap: controller.openHelplineSheet),
+          ],
         );
       }),
+    );
+  }
+}
+
+class _HelplineButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HelplineButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 104,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+        label: const Text('Helpline'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.steelBlue,
+          side: BorderSide(
+            color: AppColors.steelBlue.withValues(alpha: 0.4),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          textStyle: AppTextStyling.body_12S.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 }

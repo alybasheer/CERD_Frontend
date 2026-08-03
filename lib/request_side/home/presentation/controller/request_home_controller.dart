@@ -8,9 +8,13 @@ import 'package:fyp_source_code/request_side/create_help_request/presentation/co
 import 'package:fyp_source_code/request_side/create_help_request/presentation/view/request_help_sheet.dart';
 import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
+import 'package:fyp_source_code/services/helpline_service.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
+import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
+import 'package:fyp_source_code/utilities/reuse_components/helplines.dart';
+import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -94,13 +98,111 @@ class RequestHomeController extends GetxController {
         if (locationName != 'Location unavailable')
           'locationName': locationName,
       });
-      ToastHelper.showSuccess('SOS sent.');
+      await _showSosSentDialog();
       await refreshDashboard();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
       isSendingSos.value = false;
     }
+  }
+
+  Future<void> _showSosSentDialog() async {
+    final confirmed = await Get.dialog<bool>(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.sos, color: AppColors.emergencyRed),
+              SizedBox(width: 8),
+              const Text('SOS Sent'),
+            ],
+          ),
+          content: const Text(
+            'Your SOS was sent to nearby volunteers. '
+            'Call a helpline if you need immediate support.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Done'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Get.back(result: true),
+              icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+              label: const Text('Call Helpline'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.emergencyRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      openHelplineSheet();
+    }
+  }
+
+  void openHelplineSheet() {
+    Get.bottomSheet(
+      SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSize.m),
+              child: Text(
+                'Emergency Helplines',
+                style: AppTextStyling.title_16M.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            ...kHelplines.map(
+              (helpline) => ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.emergencyRed.withValues(
+                    alpha: 0.10,
+                  ),
+                  child: Icon(
+                    Icons.call,
+                    color: AppColors.emergencyRed,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  helpline.label,
+                  style: AppTextStyling.body_14M.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  helpline.number,
+                  style: AppTextStyling.body_12S.copyWith(
+                    color: AppColors.mediumGray,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.dialpad_rounded,
+                  color: AppColors.steelBlue,
+                ),
+                onTap: () {
+                  Get.back();
+                  HelplineService.call(helpline.number);
+                },
+              ),
+            ),
+            SizedBox(height: AppSize.mH),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      barrierColor: const Color(0x99000000),
+    );
   }
 
   void openCoordination() {
