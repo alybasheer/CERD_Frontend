@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/app_version_badge.dart';
 import 'package:fyp_source_code/volunteer_side/home/presentation/view/widgets/help_toggle.dart';
 import 'package:fyp_source_code/volunteer_side/home/presentation/view/widgets/stat_card.dart';
 import 'package:get/get.dart';
@@ -125,29 +126,41 @@ Widget sliverAppBar({
                     ],
                   ),
                 ),
-                Tooltip(
-                  message: 'volunteer.home.alerts'.tr,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: LinearGradient(
-                        colors: [AppColors.emergencyRed, AppColors.amberOrange],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.emergencyRed.withValues(alpha: 0.22),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppVersionBadge(light: true),
+                    SizedBox(width: AppSize.s),
+                    Tooltip(
+                      message: 'volunteer.home.alerts'.tr,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.emergencyRed,
+                              AppColors.amberOrange,
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.emergencyRed.withValues(
+                                alpha: 0.22,
+                              ),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
+                        padding: EdgeInsets.all(10),
+                        child: Icon(
+                          Icons.notifications_rounded,
+                          color: AppColors.pureWhite,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                    padding: EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.notifications_rounded,
-                      color: AppColors.pureWhite,
-                      size: 20,
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),

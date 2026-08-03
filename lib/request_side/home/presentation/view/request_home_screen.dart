@@ -9,6 +9,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/app_version_badge.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -25,6 +26,12 @@ class RequestHomeScreen extends StatelessWidget {
       appBar: const WeHelpAppBar(
         title: 'request.home.title',
         subtitle: 'request.home.subtitle',
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: AppVersionBadge(light: true)),
+          ),
+        ],
       ),
       body: Obx(
         () => RefreshIndicator(
