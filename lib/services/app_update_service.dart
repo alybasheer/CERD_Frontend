@@ -7,6 +7,7 @@ import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/network/get_dio.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
+import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -29,6 +30,10 @@ class AppUpdateService {
   factory AppUpdateService() => _instance;
   AppUpdateService._();
 
+  static const _dismissedKey = 'dismissed_update_version';
+
+  final StorageHelper _storage = StorageHelper();
+
   bool _isChecking = false;
 
   Future<UpdateInfo?> checkForUpdate() async {
@@ -47,7 +52,14 @@ class AppUpdateService {
       final latest = data['latestVersion']?.toString() ?? '';
       if (latest.isEmpty) return null;
 
+      debugPrint('📍 Update check: installed=$currentVersion, latest=$latest');
+
       if (_compareVersions(latest, currentVersion) <= 0) return null;
+
+      if (_storage.readData(_dismissedKey)?.toString() == latest) {
+        debugPrint('📍 Update dismissed for v$latest, skipping');
+        return null;
+      }
 
       return UpdateInfo(
         latestVersion: latest,
@@ -119,6 +131,9 @@ class AppUpdateService {
 
     if (confirmed == true) {
       await _downloadAndInstall(info.apkUrl);
+    } else {
+      _storage.writeData(_dismissedKey, info.latestVersion);
+      debugPrint('📍 Update v${info.latestVersion} dismissed');
     }
   }
 
@@ -163,13 +178,34 @@ class AppUpdateService {
         ),
       );
 
-      if (filePath != null) {
-        final file = File(filePath);
-        if (await file.exists()) {
-          await OpenFilex.open(filePath);
-        }
+      final file = File(filePath);
+      if (!await file.exists()) {
+        debugPrint('📍 Update file does not exist after download');
+        return;
+      }
+
+      final size = await file.length();
+      debugPrint('📍 Update APK downloaded: $size bytes');
+
+      if (size < 1024 * 1024 * 5) {
+        ToastHelper.showError(
+            'Download looks incomplete. Please try again later.');
+        return;
+      }
+
+      final result = await OpenFilex.open(
+        filePath,
+        type: 'application/vnd.android.package-archive',
+      );
+
+      if (result.type != ResultType.done) {
+        debugPrint('📍 OpenFilex: ${result.type} - ${result.message}');
+        ToastHelper.showError(
+            'Installer could not open (${result.message}). '
+            'Please install the APK manually.');
       }
     } catch (e) {
+      debugPrint('📍 Update download failed: $e');
       ToastHelper.showError('Download failed. Please try again later.');
     }
   }
