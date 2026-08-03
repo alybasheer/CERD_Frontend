@@ -68,6 +68,7 @@ class HelpRequest {
   String? acceptedBy;
   String? acceptedByName;
   bool isSos = false;
+  int? notifiedCount;
   double? rating;
   String? outcome;
   String? expiresAt;
@@ -91,6 +92,7 @@ class HelpRequest {
     this.acceptedBy,
     this.acceptedByName,
     this.isSos = false,
+    this.notifiedCount,
     this.rating,
     this.outcome,
     this.expiresAt,
@@ -150,6 +152,7 @@ class HelpRequest {
         _readBool(json['isSos']) ||
         _readBool(json['sos']) ||
         (category?.toLowerCase() == 'sos');
+    notifiedCount = _readInt(json['notifiedCount']);
     rating = _readDouble(json['rating'] ?? json['volunteerRating']);
     outcome = json['outcome']?.toString();
     expiresAt = json['expiresAt']?.toString();

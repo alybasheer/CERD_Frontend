@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
@@ -57,6 +59,7 @@ class RequestHomeScreen extends StatelessWidget {
                 _EmptyBox(text: 'request.home.nearby.empty'.tr)
               else
                 ...controller.nearbyVolunteers.map(_VolunteerTile.new),
+              _SosStatusSection(controller: controller),
               _TrackingMapSection(controller: controller.trackingController),
               if (controller.activeRequests.isNotEmpty) ...[
                 SizedBox(height: AppSize.lH),
@@ -78,6 +81,166 @@ class RequestHomeScreen extends StatelessWidget {
         children: [
           _SosEmergencyBar(controller: controller),
           _RequestBottomNavBar(controller: controller),
+        ],
+      ),
+    );
+  }
+}
+
+class _SosStatusSection extends StatelessWidget {
+  final RequestHomeController controller;
+
+  const _SosStatusSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final request = controller.activeRequests
+        .where((r) => r.isSos && _isOpenSosStatus(r))
+        .firstOrNull;
+    if (request == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: AppSize.sH, bottom: AppSize.sH),
+      child: _SosStatusCard(
+        request: request,
+        onCallHelpline: controller.openHelplineSheet,
+        onCancel: () => controller.cancelActiveSos(request),
+      ),
+    );
+  }
+
+  static bool _isOpenSosStatus(HelpRequest request) {
+    final status = request.status?.toLowerCase().trim() ?? '';
+    return status == 'open' || status == 'active' || status == 'pending';
+  }
+}
+
+class _SosStatusCard extends StatefulWidget {
+  final HelpRequest request;
+  final VoidCallback onCallHelpline;
+  final VoidCallback onCancel;
+
+  const _SosStatusCard({
+    required this.request,
+    required this.onCallHelpline,
+    required this.onCancel,
+  });
+
+  @override
+  State<_SosStatusCard> createState() => _SosStatusCardState();
+}
+
+class _SosStatusCardState extends State<_SosStatusCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String get _elapsed {
+    final created = DateTime.tryParse(widget.request.createdAt ?? '');
+    if (created == null) return '';
+    final diff = DateTime.now().difference(created);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+    return '${diff.inHours} hr ${diff.inMinutes % 60} min ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notified = widget.request.notifiedCount;
+
+    return Container(
+      padding: EdgeInsets.all(AppSize.m),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.emergencyRed,
+            AppColors.emergencyRed.withValues(alpha: 0.78),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.emergencyRed.withValues(alpha: 0.30),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.sos, color: Colors.white, size: 26),
+              SizedBox(width: AppSize.s),
+              Text(
+                'SOS ACTIVE',
+                style: AppTextStyling.title_16M.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _elapsed,
+                style: AppTextStyling.body_12S.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSize.sH),
+          Text(
+            notified != null && notified > 0
+                ? '$notified nearby volunteer(s) notified'
+                : 'Nearby volunteers notified',
+            style: AppTextStyling.body_14M.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppSize.sH),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: widget.onCallHelpline,
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+                  label: const Text('Helpline'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSize.s),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: widget.onCancel,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: const Text('Cancel SOS'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -30,6 +30,7 @@ Widget requestsListSection(
           title: request.displayTitle,
           description: request.description ?? 'No description provided.',
           location: request.displayLocation,
+          isSos: request.isSos,
           isAccepting: acceptingIds.contains(request.sId),
           onAccept: () => onAccept(request),
         ),

@@ -29,7 +29,10 @@ class ApiNames {
   static const coordinationContacts = 'chat/coordination/contacts';
   static const helpRequests = 'help-requests';
   static const helpRequestMedia = 'help-requests/media';
-  static const helpRequestsSos = 'help-requests/sos';
+  static const helpRequestsSos = 
+'help-requests/sos';
+  static const helpRequestsSosCancel = 
+'help-requests/sos/cancel';
   static const activeHelpRequests = 'help-requests/my/active';
   static String acceptHelpRequest(String id) => 'help-requests/$id/accept';
   static String resolveHelpRequest(String id) => 'help-requests/$id/resolve';

@@ -84,6 +84,11 @@ class RequestHomeController extends GetxController {
   }
 
   Future<void> sendSos() async {
+    if (activeRequests.any(_isActiveSos)) {
+      ToastHelper.showWarning('You already have an active SOS.');
+      return;
+    }
+
     isSendingSos.value = true;
     try {
       final position = await getCurrentLocation();
@@ -91,14 +96,19 @@ class RequestHomeController extends GetxController {
         latitude: position.latitude,
         longitude: position.longitude,
       );
-      await _repo.createSos({
+      final result = await _repo.createSos({
         'title': 'SOS Emergency',
         'latitude': position.latitude,
         'longitude': position.longitude,
         if (locationName != 'Location unavailable')
           'locationName': locationName,
       });
-      await _showSosSentDialog();
+      if (result.alreadyActive) {
+        ToastHelper.showWarning('You already have an active SOS.');
+        await refreshDashboard();
+        return;
+      }
+      await _showSosSentDialog(notified: result.notified);
       await refreshDashboard();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -107,7 +117,57 @@ class RequestHomeController extends GetxController {
     }
   }
 
-  Future<void> _showSosSentDialog() async {
+  bool _isActiveSos(HelpRequest request) {
+    if (!request.isSos) return false;
+    final status = request.status?.toLowerCase().trim() ?? '';
+    return status == 'open' ||
+        status == 'active' ||
+        status == 'pending' ||
+        status == 'accepted' ||
+        status == 'in_progress';
+  }
+
+  Future<void> cancelActiveSos(HelpRequest request) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.sos, color: AppColors.emergencyRed),
+            SizedBox(width: 8),
+            Text('Cancel SOS?'),
+          ],
+        ),
+        content: const Text(
+          'Cancelling will notify volunteers that help is no longer needed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Keep SOS'),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emergencyRed,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _repo.cancelSos();
+      ToastHelper.showSuccess('SOS cancelled.');
+      await refreshDashboard();
+    } catch (e) {
+      ToastHelper.showErrorMessage(e);
+    }
+  }
+
+  Future<void> _showSosSentDialog({int notified = 0}) async {
     final confirmed = await Get.dialog<bool>(
       PopScope(
         canPop: false,
@@ -119,9 +179,12 @@ class RequestHomeController extends GetxController {
               const Text('SOS Sent'),
             ],
           ),
-          content: const Text(
-            'Your SOS was sent to nearby volunteers. '
-            'Call a helpline if you need immediate support.',
+          content: Text(
+            notified > 0
+                ? 'Your SOS was sent to $notified nearby volunteer(s). '
+                      'Call a helpline if you need immediate support.'
+                : 'Your SOS was sent to nearby volunteers. '
+                      'Call a helpline if you need immediate support.',
           ),
           actions: [
             TextButton(
@@ -308,7 +371,9 @@ class RequestHomeController extends GetxController {
     _flowSubscription = provider.flowEventStream.listen((event) async {
       final eventName = event['event']?.toString();
       print('🔔 [FlowEvent] $eventName -> ${event['data']}');
-      if (eventName == 'help_request_accepted' || eventName == 'new_alert') {
+      if (eventName == 'help_request_accepted' ||
+          eventName == 'new_alert' ||
+          eventName == 'help_request_cancelled') {
         await refreshDashboard();
       }
       if (eventName == 'help_request_accepted') {

@@ -59,14 +59,40 @@ class HelpRequestRepo {
     return _parseMediaUrls(response);
   }
 
-  Future<HelpRequest> createSos(Object? reqBody) async {
+  Future<SosResult> createSos(Object? reqBody) async {
     final response = await _dioHelper.post(
       url: ApiNames.helpRequestsSos,
       reqBody: reqBody,
       isauthorize: true,
     );
 
-    return _parseRequest(response);
+    final request = _parseRequest(response);
+    final dataMap = _extractDataMap(response);
+    return SosResult(
+      request: request,
+      alreadyActive: dataMap['alreadyActive'] == true,
+      notified: int.tryParse(dataMap['notified']?.toString() ?? '') ?? 0,
+    );
+  }
+
+  Future<void> cancelSos() async {
+    await _dioHelper.post(
+      url: ApiNames.helpRequestsSosCancel,
+      reqBody: const {},
+      isauthorize: true,
+    );
+  }
+
+  Map<String, dynamic> _extractDataMap(dynamic response) {
+    if (response is! Map) {
+      return {};
+    }
+    final responseMap = Map<String, dynamic>.from(response);
+    final data = responseMap['data'];
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return {};
   }
 
   List<String> _parseMediaUrls(dynamic response) {
@@ -262,4 +288,16 @@ class HelpRequestRepo {
         .where((item) => item.isNotEmpty && item.toLowerCase() != 'null')
         .toList();
   }
+}
+
+class SosResult {
+  final HelpRequest request;
+  final bool alreadyActive;
+  final int notified;
+
+  const SosResult({
+    required this.request,
+    this.alreadyActive = false,
+    this.notified = 0,
+  });
 }

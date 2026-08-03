@@ -13,6 +13,7 @@ Widget requestCard(
   required String title,
   required String description,
   required String location,
+  bool isSos = false,
   bool isAccepting = false,
   VoidCallback? onAccept,
 }) {
@@ -23,10 +24,17 @@ Widget requestCard(
     decoration: BoxDecoration(
       color: scheme.surface,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: theme.dividerColor),
+      border: Border.all(
+        color: isSos
+            ? AppColors.emergencyRed.withValues(alpha: 0.65)
+            : theme.dividerColor,
+        width: isSos ? 1.5 : 1,
+      ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.06),
+          color: isSos
+              ? AppColors.emergencyRed.withValues(alpha: 0.18)
+              : Colors.black.withValues(alpha: 0.06),
           blurRadius: 10,
           offset: const Offset(0, 5),
         ),
@@ -96,19 +104,36 @@ Widget requestCard(
                         SizedBox(height: AppSize.xsH),
                         Container(
                           decoration: BoxDecoration(
-                            color: AppColors.amberOrange.withOpacity(0.2),
+                            color: isSos
+                                ? AppColors.emergencyRed.withValues(alpha: 0.15)
+                                : AppColors.amberOrange.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           padding: EdgeInsets.symmetric(
                             horizontal: AppSize.s,
                             vertical: 2,
                           ),
-                          child: Text(
-                            'common.urgent'.tr,
-                            style: AppTextStyling.body_12S.copyWith(
-                              color: AppColors.amberOrange,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isSos) ...[
+                                Icon(
+                                  Icons.sos,
+                                  size: 12,
+                                  color: AppColors.emergencyRed,
+                                ),
+                                SizedBox(width: 3),
+                              ],
+                              Text(
+                                isSos ? 'EMERGENCY' : 'common.urgent'.tr,
+                                style: AppTextStyling.body_12S.copyWith(
+                                  color: isSos
+                                      ? AppColors.emergencyRed
+                                      : AppColors.amberOrange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

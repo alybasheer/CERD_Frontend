@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
@@ -8,6 +9,9 @@ import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
+import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
+import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
+import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:get/get.dart';
 
@@ -51,7 +55,11 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         latitude: position.latitude,
         longitude: position.longitude,
       );
-      final visibleRequests = list.where(_isNotOwnRequest).toList();
+      final visibleRequests = list.where(_isNotOwnRequest).toList()
+        ..sort((a, b) {
+          if (a.isSos != b.isSos) return a.isSos ? -1 : 1;
+          return (b.createdAt ?? '').compareTo(a.createdAt ?? '');
+        });
       requests.assignAll(visibleRequests);
       unawaited(_resolveRequestLocations(visibleRequests));
     } catch (e) {
@@ -174,6 +182,19 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     _flowSubscription = provider.flowEventStream.listen((event) {
       final eventName = event['event']?.toString();
       if (eventName == 'new_help_request') {
+        final data = event['data'];
+        final isSos =
+            data is Map &&
+            (data['isSos'] == true || data['escalated'] == true);
+        if (isSos) {
+          HapticFeedback.heavyImpact();
+          SystemSound.play(SystemSoundType.alert);
+          _showSosAlertDialog(Map<String, dynamic>.from(data));
+        }
+        fetchRequests();
+        return;
+      }
+      if (eventName == 'help_request_cancelled') {
         fetchRequests();
         return;
       }
@@ -187,6 +208,84 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         }
       }
     });
+  }
+
+  void _showSosAlertDialog(Map<String, dynamic> data) {
+    if (Get.isDialogOpen ?? false) return;
+    final request = HelpRequest.fromJson(data);
+
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.sos, color: AppColors.emergencyRed),
+              SizedBox(width: 8),
+              const Text('SOS EMERGENCY'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                request.displayTitle,
+                style: AppTextStyling.title_16M.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: AppSize.sH),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: AppColors.emergencyRed,
+                  ),
+                  SizedBox(width: AppSize.xs),
+                  Expanded(
+                    child: Text(
+                      request.displayLocation,
+                      style: AppTextStyling.body_12S.copyWith(
+                        color: AppColors.mediumGray,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSize.sH),
+              Text(
+                'A nearby person needs urgent help. Respond now.',
+                style: AppTextStyling.body_14M.copyWith(
+                  color: AppColors.emergencyRed,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Later'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Get.back();
+                acceptRequest(request);
+              },
+              icon: const Icon(Icons.navigation_rounded, size: 18),
+              label: const Text('Accept & Navigate'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.emergencyRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierColor: AppColors.darkGray.withValues(alpha: 0.5),
+    );
   }
 
   @override
