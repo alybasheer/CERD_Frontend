@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fyp_source_code/network/friendly_error.dart';
 import 'package:get/get.dart';
 
 /// Professional generic toast messages for common scenarios
@@ -30,6 +31,12 @@ class ToastMessages {
   static const String timeoutError = 'Request timeout. Please try again.';
   static const String noInternet =
       'No internet connection. Please check your network.';
+  static const String sessionExpired =
+      'Your session has expired. Please sign in again.';
+  static const String notFound =
+      'We could not find what you were looking for. Please try again.';
+  static const String conflict =
+      'This action conflicts with something that already exists. Please try something else.';
 
   // ============ GENERAL MESSAGES ============
   static const String success = 'Operation completed successfully.';
@@ -88,28 +95,7 @@ class ToastHelper {
 
   /// Show generic error - extracts and formats API errors professionally
   static void showErrorMessage(dynamic error) {
-    String message = ToastMessages.serverError;
-
-    if (error is String) {
-      if (error.toLowerCase().contains('email')) {
-        message = ToastMessages.emailNotFound;
-      } else if (error.toLowerCase().contains('password')) {
-        message = ToastMessages.passwordIncorrect;
-      } else if (error.toLowerCase().contains('network') ||
-          error.toLowerCase().contains('socket')) {
-        message = ToastMessages.networkError;
-      } else if (error.toLowerCase().contains('timeout')) {
-        message = ToastMessages.timeoutError;
-      } else {
-        message = error;
-      }
-    } else if (error.toString().contains('SocketException')) {
-      message = ToastMessages.noInternet;
-    } else if (error.toString().contains('TimeoutException')) {
-      message = ToastMessages.timeoutError;
-    }
-
-    showError(message);
+    showError(friendlyErrorMessage(error));
   }
 
   static void _show(

@@ -275,12 +275,20 @@ const Map<String, String> urPK = {
   'profile.volunteer_home': 'رضاکار ہوم',
   'profile.request_home': 'درخواست ہوم',
   'profile.communities': 'کمیونٹیز',
-  'profile.preferences': 'ترجیحات',
   'profile.dark_mode': 'ڈارک موڈ',
   'profile.privacy': 'رازداری',
   'profile.data_permissions': 'ڈیٹا اور اجازتیں',
-  'profile.session_access': 'سیشن رسائی',
-  'profile.location_use': 'مقام کا استعمال',
+  'profile.data_permissions.intro':
+      'یہاں بتایا گیا ہے کہ ایپ آپ کے آلے اور ہمارے سرورز پر کیا محفوظ کرتی ہے، اور ہر اجازت کس کام کے لیے استعمال ہوتی ہے۔',
+  'profile.session_access': 'آپ کا لاگ ان سیشن',
+  'profile.session_access.text':
+      'ہم آپ کو سائن ان رکھتے ہیں تاکہ آپ کو بار بار لاگ ان نہ کرنا پڑے۔ سائن آؤٹ کرنے سے یہ سیشن فوراً ختم ہو جاتا ہے، بشمول آلے پر محفوظ فائلیں۔',
+  'profile.location_use': 'مقام شیئرنگ',
+  'profile.location_use.text':
+      'آپ کا مقام صرف اس وقت بھیجا جاتا ہے جب آپ مدد کی درخواست بنائیں یا SOS دبائیں، تاکہ قریبی رضاکار آپ کو تلاش کر سکیں۔ یہ کبھی عوامی طورہ شیئر نہیں کیا جا۔',
+  'profile.preferences': 'ایپ کی ترجیحات',
+  'profile.preferences.text':
+      'آپ کی زبان اور ظاہری شکل کے انتخاب صرف آپ کے اس آلے پر محفوظ ہوتے ہیں۔ وہ کسی بھی وقت بدلے جا سکتے ہیں اور کہیں اور شیئ نہیں کیے جاتے۔',
   'profile.sign_out': 'سائن آؤٹ',
 
   // ── Admin info row labels ─────────────────────────────────────────

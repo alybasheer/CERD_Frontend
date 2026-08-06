@@ -16,7 +16,7 @@ class DioHelper {
 
     final errorMsg =
         response.data is Map && response.data['message'] != null
-            ? response.data['message'].toString()
+            ? _messageToString(response.data['message'])
             : (response.statusMessage ?? 'Error: ${response.statusCode}');
 
     print(
@@ -33,6 +33,13 @@ class DioHelper {
     throw FetchDataExceptions(
       errorMsg,
     ); // removed the prefix so it displays clearly
+  }
+
+  String _messageToString(dynamic message) {
+    if (message is List) {
+      return message.map((e) => e?.toString()).where((e) => e != null && e.isNotEmpty).join('. ');
+    }
+    return message.toString();
   }
 
   void _handleUnauthorizedSession() {

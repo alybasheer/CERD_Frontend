@@ -10,6 +10,7 @@ import 'package:fyp_source_code/request_side/home/presentation/controller/tracki
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/helpline_service.dart';
 import 'package:fyp_source_code/services/location_services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -40,6 +41,9 @@ class RequestHomeController extends GetxController {
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
   final Set<String> _ratingPrompted = {};
 
+  static const int maxLocationResolutionsPerRefresh = 4;
+  final Set<String> _resolvedLocationIds = {};
+
   @override
   void onInit() {
     super.onInit();
@@ -65,10 +69,23 @@ class RequestHomeController extends GetxController {
   }
 
   Future<void> refreshDashboard() async {
-    isLoading.value = true;
+    // Only the first load needs a full shimmer; later refreshes (pull-to-
+    // refresh, flow events) keep the existing data visible while updating.
+    if (activeRequests.isEmpty && nearbyVolunteers.isEmpty) {
+      isLoading.value = true;
+    }
     try {
-      final position = await getCurrentLocation();
-      final active = await _repo.getMyActiveRequests();
+      final activeFuture = _repo.getMyActiveRequests();
+
+      Position position;
+      try {
+        position = await getQuickPosition();
+      } catch (_) {
+        final last = getCachedKnownPosition();
+        position = last ?? await getCurrentLocation(useCacheFirst: true);
+      }
+
+      final active = await activeFuture;
       final volunteers = await _repo.getNearbyVolunteers(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -91,11 +108,19 @@ class RequestHomeController extends GetxController {
 
     isSendingSos.value = true;
     try {
-      final position = await getCurrentLocation();
+      // Fast path: cached/last-known position, no blocking GPS fix.
+      final position = await getQuickPosition();
+
+      // Resolve a readable place name best-effort within a tiny budget so the
+      // SOS fires immediately even if geocoding is slow.
       final locationName = await getLocationNameFromCoordinates(
         latitude: position.latitude,
         longitude: position.longitude,
+      ).timeout(
+        const Duration(milliseconds: 1500),
+        onTimeout: () => 'Location unavailable',
       );
+
       final result = await _repo.createSos({
         'title': 'SOS Emergency',
         'latitude': position.latitude,
@@ -347,29 +372,53 @@ class RequestHomeController extends GetxController {
 
   Future<void> _resolveRequestLocations(List<HelpRequest> requests) async {
     var changed = false;
+    var resolvedCount = 0;
     for (final request in requests) {
+      final id = request.sId;
+      if (id == null || id.trim().isEmpty) {
+        continue;
+      }
+
+      // Cached result for this request id → skip entirely.
+      if (_resolvedLocationIds.contains(id)) {
+        continue;
+      }
       if (request.locationName != null &&
           request.locationName!.trim().isNotEmpty &&
           !isGenericLocationLabel(request.locationName!)) {
+        _resolvedLocationIds.add(id);
         continue;
+      }
+
+      // Cap the work per refresh so a bus of coordinate-only requests cannot
+      // pin the UI thread for seconds.
+      if (resolvedCount >= maxLocationResolutionsPerRefresh) {
+        break;
       }
 
       final lat = request.location?.latitude;
       final lng = request.location?.longitude;
       if (lat == null || lng == null) {
+        _resolvedLocationIds.add(id);
         continue;
       }
 
       final resolvedName = await getLocationNameFromCoordinates(
         latitude: lat,
         longitude: lng,
+      ).timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => 'Location unavailable',
       );
       if (resolvedName == 'Location unavailable' ||
           resolvedName.trim().isEmpty) {
+        _resolvedLocationIds.add(id);
         continue;
       }
 
       request.locationName = resolvedName;
+      _resolvedLocationIds.add(id);
+      resolvedCount += 1;
       changed = true;
     }
 

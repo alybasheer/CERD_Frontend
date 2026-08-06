@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/splash_onboardings/presentation/controller/splash_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -58,6 +59,10 @@ class _SplashScreenProfessionalState extends State<SplashScreenProfessional>
         child: Stack(
           children: [
             _BackgroundLogo(isDark: isDark),
+            const Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: LanguageCapsule(),
+            ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSize.l),
               child: Column(

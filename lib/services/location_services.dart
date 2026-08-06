@@ -4,7 +4,19 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
-Future<Position> getCurrentLocation() async {
+Position? _cachedKnownPosition;
+DateTime? _cachedKnownPositionAt;
+
+/// Returns a fresh, accurate position. Prefer this when accuracy matters more
+/// than speed.
+Future<Position> getCurrentLocation({bool useCacheFirst = false}) async {
+  if (useCacheFirst) {
+    final cached = getCachedKnownPosition();
+    if (cached != null) {
+      return cached;
+    }
+  }
+
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
@@ -17,13 +29,66 @@ Future<Position> getCurrentLocation() async {
     return Future.error('Location permissions are permanently denied');
   }
 
-  return await Geolocator.getCurrentPosition(
+  final current = await Geolocator.getCurrentPosition(
     locationSettings: AndroidSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
+      accuracy: LocationAccuracy.best,
       forceLocationManager: true,
     ),
   );
+  _rememberPosition(current);
+  return current;
 }
+
+/// Fast position lookup for time-sensitive actions (e.g. SOS).
+///
+/// Order: cached memory position (≤2 min) → last known platform position
+/// (≤2 min) → fresh GPS fix (bounded wait). Never blocks longer than the
+/// timeout before falling back to the platform's last-known value.
+Future<Position> getQuickPosition() async {
+  final cached = _cachedKnownPosition;
+  if (cached != null &&
+      DateTime.now().difference(_cachedKnownPositionAt!) <
+          const Duration(minutes: 2)) {
+    return cached;
+  }
+
+  try {
+    final last = await Geolocator.getLastKnownPosition();
+    if (last != null) {
+      final timestamp = last.timestamp;
+      final isRecent =
+          DateTime.now().difference(timestamp) < const Duration(minutes: 2);
+      if (isRecent) {
+        _rememberPosition(last);
+        return last;
+      }
+    }
+  } catch (_) {
+    // Fall through to a fresh fix.
+  }
+
+  final fresh = await getCurrentLocation(
+    useCacheFirst: false,
+  ).timeout(
+    const Duration(seconds: 5),
+    onTimeout: () {
+      final last = _cachedKnownPosition;
+      if (last != null) {
+        return last;
+      }
+      return Future.error('Unable to determine your location.');
+    },
+  );
+  _rememberPosition(fresh);
+  return fresh;
+}
+
+void _rememberPosition(Position position) {
+  _cachedKnownPosition = position;
+  _cachedKnownPositionAt = DateTime.now();
+}
+
+Position? getCachedKnownPosition() => _cachedKnownPosition;
 
 Future<String> getLocationNameFromCoordinates({
   required double latitude,

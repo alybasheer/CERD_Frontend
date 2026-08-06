@@ -272,12 +272,20 @@ const Map<String, String> enUS = {
   'profile.volunteer_home': 'Volunteer Home',
   'profile.request_home': 'Request Home',
   'profile.communities': 'Communities',
-  'profile.preferences': 'Preferences',
   'profile.dark_mode': 'Dark mode',
   'profile.privacy': 'Privacy',
   'profile.data_permissions': 'Data and permissions',
-  'profile.session_access': 'Session access',
-  'profile.location_use': 'Location use',
+  'profile.data_permissions.intro':
+      'Here is what the app stores on your device and on our servers, and what each permission is used for.',
+  'profile.session_access': 'Your login session',
+  'profile.session_access.text':
+      'We keep you signed in so you don\u2019t have to log in every time. Signing out clears this session immediately, including the files stored on your device.',
+  'profile.location_use': 'Location sharing',
+  'profile.location_use.text':
+      'Your location is only sent when you create a help request or press SOS, so nearby volunteers can find you. It is never shared publicly.',
+  'profile.preferences': 'App preferences',
+  'profile.preferences.text':
+      'Your language and appearance choices are saved on this device only. They can be changed at any time and are never sent anywhere.',
   'profile.sign_out': 'Sign out',
 
   // ── Admin info row labels ─────────────────────────────────────────

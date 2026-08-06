@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:fyp_source_code/firebase_options.dart';
 import 'package:fyp_source_code/localization/app_translations.dart';
-import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/localization/locale_controller.dart';
 import 'package:fyp_source_code/routing/route_paths.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
@@ -57,15 +56,7 @@ class MyApp extends StatelessWidget {
             initialRoute: RouteNames.splash,
             getPages: RoutePaths.routePath,
             builder: (context, child) {
-              return Stack(
-                children: [
-                  child ?? const SizedBox.shrink(),
-                  const Align(
-                    alignment: AlignmentDirectional.topEnd,
-                    child: LanguageCapsule(),
-                  ),
-                ],
-              );
+              return child ?? const SizedBox.shrink();
             },
           ),
         );

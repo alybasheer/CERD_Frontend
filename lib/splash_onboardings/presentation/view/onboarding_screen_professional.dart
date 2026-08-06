@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/splash_onboardings/presentation/controller/onboarding_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -18,6 +19,10 @@ class OnboardingScreenProfessional extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: LanguageCapsule(),
+            ),
             Expanded(
               child: PageView.builder(
                 controller: controller.pageController,

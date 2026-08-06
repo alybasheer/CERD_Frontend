@@ -427,6 +427,14 @@ class ProfilePolicySection extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: AppSize.mH),
+                    Text(
+                      'profile.data_permissions.intro'.tr,
+                      style: AppTextStyling.body_14M.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: AppSize.lH),
                     _PolicyLine(
                       icon: Icons.key_rounded,
                       title: 'profile.session_access'.tr,
