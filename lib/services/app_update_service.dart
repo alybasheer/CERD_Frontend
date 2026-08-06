@@ -18,10 +18,14 @@ class UpdateInfo {
   final String apkUrl;
   final String releaseNotes;
 
+  /// When true the update cannot be skipped (hard requirement).
+  final bool required;
+
   UpdateInfo({
     required this.latestVersion,
     required this.apkUrl,
     required this.releaseNotes,
+    this.required = false,
   });
 }
 
@@ -52,11 +56,19 @@ class AppUpdateService {
       final latest = data['latestVersion']?.toString() ?? '';
       if (latest.isEmpty) return null;
 
+      final minRequired = data['minRequiredVersion']?.toString() ?? '';
+
       debugPrint('📍 Update check: installed=$currentVersion, latest=$latest');
 
       if (_compareVersions(latest, currentVersion) <= 0) return null;
 
-      if (_storage.readData(_dismissedKey)?.toString() == latest) {
+      final required = _isUpdateRequired(
+        currentVersion: currentVersion,
+        minRequired: minRequired,
+      );
+
+      if (!required &&
+          _storage.readData(_dismissedKey)?.toString() == latest) {
         debugPrint('📍 Update dismissed for v$latest, skipping');
         return null;
       }
@@ -65,6 +77,7 @@ class AppUpdateService {
         latestVersion: latest,
         apkUrl: data['apkUrl']?.toString() ?? '',
         releaseNotes: data['releaseNotes']?.toString() ?? '',
+        required: required,
       );
     } catch (_) {
       return null;
@@ -84,68 +97,123 @@ class AppUpdateService {
     return 0;
   }
 
+  bool _isUpdateRequired({required String currentVersion, required String minRequired}) {
+    if (minRequired.isEmpty) return false;
+    return _compareVersions(minRequired, currentVersion) > 0;
+  }
+
   /// Shows the update dialog and returns whether the user made a choice
   /// (i.e. the prompt was actually presented). Returns `false` if nothing was
   /// shown and a retry should be allowed later.
-  Future<bool> promptUpdate(UpdateInfo info) async {
+  ///
+  /// When [required] is true the dialog cannot be dismissed until the update
+  /// is downloaded, so a user stuck on an old build is always brought current.
+  Future<bool> promptUpdate(UpdateInfo info, {bool required = false}) async {
     if (kIsWeb) return false;
-    final confirmed = await Get.dialog<bool>(
-      PopScope(
-        canPop: false,
-        child: AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.system_update, color: AppColors.steelBlue),
-              SizedBox(width: 8),
-              Text('Update Available'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Version ${info.latestVersion} is ready'),
-              if (info.releaseNotes.isNotEmpty) ...[
-                SizedBox(height: 12),
-                Text('What\'s new:',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                SizedBox(height: 4),
-                Text(info.releaseNotes),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: Text('Later'),
-            ),
-            ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.steelBlue,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Update Now'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed == true) {
-      await _downloadAndInstall(info.apkUrl);
+    if (required) {
+      await _showRequiredUpdate(info);
     } else {
-      _storage.writeData(_dismissedKey, info.latestVersion);
-      debugPrint('📍 Update v${info.latestVersion} dismissed');
+      final confirmed = await Get.dialog<bool>(
+        PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.system_update, color: AppColors.steelBlue),
+                SizedBox(width: 8),
+                Text('Update Available'),
+              ],
+            ),
+            content: _UpdateContent(info: info),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: Text('Later'),
+              ),
+              ElevatedButton(
+                onPressed: () => Get.back(result: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.steelBlue,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Update Now'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (confirmed == true) {
+        await _downloadAndInstall(info.apkUrl);
+      } else {
+        _storage.writeData(_dismissedKey, info.latestVersion);
+        debugPrint('📍 Update v${info.latestVersion} dismissed');
+      }
     }
     return true;
   }
 
-  Future<void> _downloadAndInstall(String url) async {
-    if (kIsWeb) return;
+  /// Blocks until the required update is downloaded; no "Later" escape.
+  Future<void> _showRequiredUpdate(UpdateInfo info) async {
+    while (true) {
+      final decision = await Get.dialog<_RequiredUpdateDecision>(
+        PopScope(
+          canPop: false,
+          child: AlertDialog(
+            icon: Icon(Icons.system_update_alt, color: AppColors.emergencyRed),
+            title: const Text('Update required'),
+            content: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'A newer version of the app is available. '
+                  'Please update to continue.',
+                ),
+                SizedBox(height: 12),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: _RequiredUpdateDecision.retry),
+                child: const Text('Retry'),
+              ),
+              ElevatedButton(
+                onPressed: () =>
+                    Get.back(result: _RequiredUpdateDecision.update),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.emergencyRed,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Update Now'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final votesUpdate =
+          decision == null || decision == _RequiredUpdateDecision.update;
+      if (votesUpdate) {
+        final ok = await _downloadAndInstall(info.apkUrl);
+        if (!ok) {
+          ToastHelper.showError(
+            'Update download failed. Please try again.',
+          );
+          continue; // Loop back so the user can retry.
+        }
+        return;
+      }
+    }
+  }
+
+  /// Downloads the APK
+  /// Returns `true` when the download completed and the installer opened.
+  Future<bool> _downloadAndInstall(String url) async {
+    if (kIsWeb) return false;
     if (url.isEmpty) {
       ToastHelper.showError('Download URL not available');
-      return;
+      return false;
     }
 
     String? filePath;
@@ -185,7 +253,7 @@ class AppUpdateService {
       final file = File(filePath);
       if (!await file.exists()) {
         debugPrint('📍 Update file does not exist after download');
-        return;
+        return false;
       }
 
       final size = await file.length();
@@ -194,7 +262,7 @@ class AppUpdateService {
       if (size < 1024 * 1024 * 5) {
         ToastHelper.showError(
             'Download looks incomplete. Please try again later.');
-        return;
+        return false;
       }
 
       final result = await OpenFilex.open(
@@ -207,10 +275,39 @@ class AppUpdateService {
         ToastHelper.showError(
             'Installer could not open (${result.message}). '
             'Please install the APK manually.');
+        return false;
       }
+      return true;
     } catch (e) {
       debugPrint('📍 Update download failed: $e');
       ToastHelper.showError('Download failed. Please try again later.');
+      return false;
     }
   }
 }
+
+/// Shared release-notes block used inside the update dialogs.
+class _UpdateContent extends StatelessWidget {
+  final UpdateInfo info;
+
+  const _UpdateContent({required this.info});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Version ${info.latestVersion} is ready'),
+        if (info.releaseNotes.isNotEmpty) ...[
+          SizedBox(height: 12),
+          Text('What\'s new:', style: TextStyle(fontWeight: FontWeight.w600)),
+          SizedBox(height: 4),
+          Text(info.releaseNotes),
+        ],
+      ],
+    );
+  }
+}
+
+enum _RequiredUpdateDecision { retry, update }

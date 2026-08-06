@@ -64,17 +64,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _checkForUpdate() async {
-    // Don't hammer repeatedly on quick resume transitions.
+    // Don't hammer repeatedly on quick resume transitions (optional prompts
+    // only). Required updates always show again.
     final now = DateTime.now();
-    if (_lastPromptedAt != null &&
-        now.difference(_lastPromptedAt!) < const Duration(minutes: 30)) {
-      return;
-    }
+    final isThrottled =
+        _lastPromptedAt != null &&
+        now.difference(_lastPromptedAt!) < const Duration(minutes: 30);
 
     final update = await AppUpdateService().checkForUpdate();
     if (update == null || !mounted) return;
-    await AppUpdateService().promptUpdate(update);
-    _lastPromptedAt = now;
+    if (update.required || !isThrottled) {
+      await AppUpdateService().promptUpdate(update, required: update.required);
+      _lastPromptedAt = now;
+    }
   }
 
   // This widget is the root of your application.

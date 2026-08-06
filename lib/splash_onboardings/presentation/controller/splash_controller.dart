@@ -13,7 +13,10 @@ class SplashController extends GetxController {
 
   Future<void> _checkForAppUpdate() async {
     final update = await AppUpdateService().checkForUpdate();
-    if (update != null) {
+    if (update != null && update.required) {
+      // Block until a required update completes before entering the app.
+      await AppUpdateService().promptUpdate(update, required: true);
+    } else if (update != null) {
       AppUpdateService().promptUpdate(update);
     }
   }
