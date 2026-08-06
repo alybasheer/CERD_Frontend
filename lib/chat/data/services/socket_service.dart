@@ -130,6 +130,7 @@ class SocketService {
     _listenToFlowEvent('help_request_accepted');
     _listenToFlowEvent('help_request_resolved');
     _listenToFlowEvent('new_alert');
+    _listenToFlowEvent('sos_escalated');
 
     _socket.on('volunteer_location', (data) {
       try {

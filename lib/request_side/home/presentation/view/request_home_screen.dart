@@ -105,6 +105,7 @@ class _SosStatusSection extends StatelessWidget {
         request: request,
         onCallHelpline: controller.openHelplineSheet,
         onCancel: () => controller.cancelActiveSos(request),
+        controller: controller,
       ),
     );
   }
@@ -119,11 +120,13 @@ class _SosStatusCard extends StatefulWidget {
   final HelpRequest request;
   final VoidCallback onCallHelpline;
   final VoidCallback onCancel;
+  final RequestHomeController controller;
 
   const _SosStatusCard({
     required this.request,
     required this.onCallHelpline,
     required this.onCancel,
+    required this.controller,
   });
 
   @override
@@ -241,10 +244,122 @@ class _SosStatusCardState extends State<_SosStatusCard> {
               ),
             ],
           ),
+          SizedBox(height: AppSize.sH),
+          _SosSnoozeRow(widget.controller),
         ],
       ),
     );
   }
+}
+
+class _SosSnoozeRow extends StatefulWidget {
+  final RequestHomeController controller;
+
+  const _SosSnoozeRow(this.controller);
+
+  @override
+  State<_SosSnoozeRow> createState() => _SosSnoozeRowState();
+}
+
+class _SosSnoozeRowState extends State<_SosSnoozeRow> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  void _pickSnoozeDuration() {
+    Get.bottomSheet(
+      SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Snooze alerts'),
+              subtitle: const Text('Pause the ringing and vibration'),
+              leading: const Icon(Icons.bedtime_rounded),
+            ),
+            const Divider(height: 1),
+            ..._snoozeOptions.map(
+              (entry) => ListTile(
+                title: Text('Snooze ${entry.label}'),
+                trailing: const Icon(Icons.alarm_off_rounded, size: 20),
+                onTap: () {
+                  Get.back();
+                  widget.controller.snoozeSos(entry.duration);
+                },
+              ),
+            ),
+            SizedBox(height: AppSize.sH),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _snoozeOptions = [
+    _Snooze('5 min', Duration(minutes: 5)),
+    _Snooze('15 min', Duration(minutes: 15)),
+    _Snooze('30 min', Duration(minutes: 30)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.controller.isSosSnoozed) {
+      return Row(
+        children: [
+          Expanded(
+            child: Chip(
+              avatar: const Icon(Icons.bedtime_rounded, size: 18),
+              label: Text(
+                'Ringing paused — ${widget.controller.snoozeLabel}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+              backgroundColor: Colors.white.withValues(alpha: 0.14),
+              labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: widget.controller.clearSnooze,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Resume'),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+          ),
+        ],
+      );
+    }
+
+    return Align(
+      alignment: Alignment.center,
+      child: TextButton.icon(
+        onPressed: _pickSnoozeDuration,
+        icon: const Icon(Icons.bedtime_rounded, size: 18),
+        label: const Text('Snooze'),
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
+      ),
+    );
+  }
+}
+
+class _Snooze {
+  final String label;
+  final Duration duration;
+
+  const _Snooze(this.label, this.duration);
 }
 
 class _TrackingMapSection extends StatelessWidget {

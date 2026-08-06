@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
@@ -40,6 +41,27 @@ class RequestHomeController extends GetxController {
 
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
   final Set<String> _ratingPrompted = {};
+
+  // ── Sender-side SOS alerting ────────────────────────────────────────
+  /// Repeat tone cadence while an SOS is open (every 60s).
+  static const sosReminderInterval = Duration(seconds: 60);
+
+  /// When not null, ringing is paused until this instant (snooze).
+  DateTime? _snoozeUntil;
+  Timer? _sosReminderTimer;
+  Timer? _snoozeResumeTimer;
+
+  /// Per-send confirmation guard so an accepted-SOS alert only fires once
+  /// per request (a repeated convenience so every new escalation rings).
+  final Set<String> _ringingRequestIds = {};
+
+  bool get isSosSnoozed => _snoozeUntil != null && DateTime.now().isBefore(_snoozeUntil!);
+
+  int get snoozeRemainingSeconds {
+    if (_snoozeUntil == null) return 0;
+    final diff = _snoozeUntil!.difference(DateTime.now());
+    return diff.isNegative ? 0 : diff.inSeconds;
+  }
 
   static const int maxLocationResolutionsPerRefresh = 4;
   final Set<String> _resolvedLocationIds = {};
@@ -97,6 +119,7 @@ class RequestHomeController extends GetxController {
       ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
+      _syncSosReminder();
     }
   }
 
@@ -133,6 +156,8 @@ class RequestHomeController extends GetxController {
         await refreshDashboard();
         return;
       }
+      // Ring immediately: the SOS is now live on your phone.
+      ringSosAlarm();
       await _showSosSentDialog(notified: result.notified);
       await refreshDashboard();
     } catch (e) {
@@ -437,16 +462,38 @@ class RequestHomeController extends GetxController {
       print('🔔 [FlowEvent] $eventName -> ${event['data']}');
       if (eventName == 'help_request_accepted' ||
           eventName == 'new_alert' ||
-          eventName == 'help_request_cancelled') {
+          eventName == 'help_request_cancelled' ||
+          eventName == 'sos_escalated') {
         await refreshDashboard();
       }
       if (eventName == 'help_request_accepted') {
+        // A volunteer is on the way — ring so the user notices immediately
+        // (once per request; escalation events ring on every level).
+        final requestId = _extractRequestId(event['data']);
+        if (requestId != null && !_ringingRequestIds.contains(requestId)) {
+          _ringingRequestIds.add(requestId);
+          ringSosAlarm();
+        }
         await _startTrackingAcceptedRequest(event['data']);
+      }
+      if (eventName == 'sos_escalated') {
+        ringSosAlarm();
+        final data = event['data'];
+        if (data is Map && Get.context != null) {
+          final radiusKm = data['radiusKm']?.toString();
+          final minutes = data['minutes']?.toString();
+          final msg = radiusKm != null && minutes != null
+              ? 'No volunteer accepted yet. SOS widened to '
+                    '$radiusKm km after $minutes minutes.'
+              : 'No volunteer accepted yet. SOS escalated to a wider area.';
+          ToastHelper.showWarning(msg);
+        }
       }
       if (eventName == 'help_request_resolved') {
         await refreshDashboard();
         trackingController.stopTracking();
         final requestId = _extractRequestId(event['data']);
+        _ringingRequestIds.remove(requestId);
         if (requestId != null && !_ratingPrompted.contains(requestId)) {
           _ratingPrompted.add(requestId);
           _showRatingDialog(requestId);
@@ -553,9 +600,65 @@ class RequestHomeController extends GetxController {
     }
   }
 
+  // ── Sender-side SOS ringing / snooze ────────────────────────────────
+
+  /// Vibrate + play the alert sound.
+  void ringSosAlarm({bool heavy = true}) {
+    HapticFeedback.heavyImpact();
+    SystemSound.play(SystemSoundType.alert);
+  }
+
+  /// Start/stop the periodic reminder while an SOS is open. Called after
+  /// every dashboard refresh so the cadence tracks the current state.
+  void _syncSosReminder() {
+    final hasOpenSos = activeRequests.any((r) => r.isSos && _isActiveSos(r));
+    final shouldRing = hasOpenSos && !isSosSnoozed;
+
+    if (shouldRing) {
+      _sosReminderTimer ??= Timer.periodic(
+        sosReminderInterval,
+        (_) => ringSosAlarm(heavy: false),
+      );
+    } else {
+      _sosReminderTimer?.cancel();
+      _sosReminderTimer = null;
+    }
+  }
+
+  /// Human-readable remaining snooze, e.g. "12 min".
+  String get snoozeLabel {
+    final secs = snoozeRemainingSeconds;
+    if (secs <= 0) return '0 min';
+    final m = secs ~/ 60;
+    final s = secs % 60;
+    return s == 0 ? '$m min' : '${m}m ${s}s';
+  }
+
+  /// Pause ringing for the given duration.
+  void snoozeSos(Duration duration) {
+    _snoozeUntil = DateTime.now().add(duration);
+    _syncSosReminder();
+    _snoozeResumeTimer?.cancel();
+    _snoozeResumeTimer = Timer(duration, () {
+      _snoozeUntil = null;
+      // Re-arm the cadence immediately so the user knows ringing resumed.
+      ringSosAlarm();
+      _syncSosReminder();
+    });
+  }
+
+  /// Cancel the snooze and resume ringing now.
+  void clearSnooze() {
+    _snoozeResumeTimer?.cancel();
+    _snoozeUntil = null;
+    _syncSosReminder();
+  }
+
   @override
   void onClose() {
     _flowSubscription?.cancel();
+    _sosReminderTimer?.cancel();
+    _snoozeResumeTimer?.cancel();
     ratingCommentController.dispose();
     super.onClose();
   }
