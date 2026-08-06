@@ -211,56 +211,71 @@ class RequestHomeController extends GetxController {
   }
 
   void openHelplineSheet() {
+    final theme = Get.context?.theme;
     Get.bottomSheet(
-      SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSize.m),
-              child: Text(
-                'Emergency Helplines',
-                style: AppTextStyling.title_16M.copyWith(
-                  fontWeight: FontWeight.w800,
+      Material(
+        color: theme?.colorScheme.surface ?? Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSize.m),
+                  child: Center(
+                    child: Text(
+                      'Emergency Helplines',
+                      style: AppTextStyling.title_16M.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const Divider(height: 1),
+                ...kHelplines.map(
+                  (helpline) => ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.emergencyRed.withValues(
+                        alpha: 0.10,
+                      ),
+                      child: Icon(
+                        Icons.call,
+                        color: AppColors.emergencyRed,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      helpline.label,
+                      style: AppTextStyling.body_14M.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      helpline.number,
+                      style: AppTextStyling.body_12S.copyWith(
+                        color: AppColors.mediumGray,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.dialpad_rounded,
+                      color: AppColors.steelBlue,
+                    ),
+                    onTap: () {
+                      Get.back();
+                      HelplineService.call(helpline.number);
+                    },
+                  ),
+                ),
+                SizedBox(height: AppSize.mH),
+              ],
             ),
-            ...kHelplines.map(
-              (helpline) => ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.emergencyRed.withValues(
-                    alpha: 0.10,
-                  ),
-                  child: Icon(
-                    Icons.call,
-                    color: AppColors.emergencyRed,
-                    size: 20,
-                  ),
-                ),
-                title: Text(
-                  helpline.label,
-                  style: AppTextStyling.body_14M.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: Text(
-                  helpline.number,
-                  style: AppTextStyling.body_12S.copyWith(
-                    color: AppColors.mediumGray,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.dialpad_rounded,
-                  color: AppColors.steelBlue,
-                ),
-                onTap: () {
-                  Get.back();
-                  HelplineService.call(helpline.number);
-                },
-              ),
-            ),
-            SizedBox(height: AppSize.mH),
-          ],
+          ),
         ),
       ),
       isScrollControlled: true,
