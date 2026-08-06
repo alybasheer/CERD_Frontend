@@ -8,6 +8,7 @@ import 'package:fyp_source_code/localization/app_translations.dart';
 import 'package:fyp_source_code/localization/locale_controller.dart';
 import 'package:fyp_source_code/routing/route_paths.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
+import 'package:fyp_source_code/services/app_update_service.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_theme.dart';
 import 'package:fyp_source_code/volunteer_side/profile/presentation/controller/profile_controller.dart';
 import 'package:get/get.dart';
@@ -22,11 +23,59 @@ void main() async {
   final profileCtrl = Get.put(ProfileController());
   Get.put(LocaleController());
   await Future.wait([profileCtrl.themeLoad()]);
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  DateTime? _lastPromptedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleUpdateCheck();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _scheduleUpdateCheck();
+    }
+  }
+
+  /// Re-checks for an update shortly after launch and every time the app is
+  /// resumed, so logged-in users get the prompt even if the app never cold
+  /// started again.
+  void _scheduleUpdateCheck() {
+    Future.delayed(const Duration(seconds: 4), _checkForUpdate);
+  }
+
+  Future<void> _checkForUpdate() async {
+    // Don't hammer repeatedly on quick resume transitions.
+    final now = DateTime.now();
+    if (_lastPromptedAt != null &&
+        now.difference(_lastPromptedAt!) < const Duration(minutes: 30)) {
+      return;
+    }
+
+    final update = await AppUpdateService().checkForUpdate();
+    if (update == null || !mounted) return;
+    await AppUpdateService().promptUpdate(update);
+    _lastPromptedAt = now;
+  }
 
   // This widget is the root of your application.
   @override

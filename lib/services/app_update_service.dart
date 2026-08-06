@@ -84,8 +84,11 @@ class AppUpdateService {
     return 0;
   }
 
-  Future<void> promptUpdate(UpdateInfo info) async {
-    if (kIsWeb) return;
+  /// Shows the update dialog and returns whether the user made a choice
+  /// (i.e. the prompt was actually presented). Returns `false` if nothing was
+  /// shown and a retry should be allowed later.
+  Future<bool> promptUpdate(UpdateInfo info) async {
+    if (kIsWeb) return false;
     final confirmed = await Get.dialog<bool>(
       PopScope(
         canPop: false,
@@ -135,6 +138,7 @@ class AppUpdateService {
       _storage.writeData(_dismissedKey, info.latestVersion);
       debugPrint('📍 Update v${info.latestVersion} dismissed');
     }
+    return true;
   }
 
   Future<void> _downloadAndInstall(String url) async {
