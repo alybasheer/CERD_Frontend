@@ -14,6 +14,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:get/get.dart';
+import 'package:vibration/vibration.dart';
 
 class HomeController extends GetxController with WidgetsBindingObserver {
   final HelpRequestRepo _repo = HelpRequestRepo();
@@ -187,7 +188,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
             data is Map &&
             (data['isSos'] == true || data['escalated'] == true);
         if (isSos) {
-          HapticFeedback.heavyImpact();
+          Vibration.vibrate(pattern: [0, 400, 200, 400, 200, 800]);
           SystemSound.play(SystemSoundType.alert);
           _showSosAlertDialog(Map<String, dynamic>.from(data));
         }

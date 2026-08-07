@@ -19,6 +19,7 @@ import 'package:fyp_source_code/utilities/reuse_components/helplines.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:vibration/vibration.dart';
 
 class RequestHomeController extends GetxController {
   final HelpRequestRepo _repo = HelpRequestRepo();
@@ -604,7 +605,7 @@ class RequestHomeController extends GetxController {
 
   /// Vibrate + play the alert sound.
   void ringSosAlarm() {
-    HapticFeedback.heavyImpact();
+    Vibration.vibrate(pattern: [0, 400, 200, 400, 200, 800]);
     SystemSound.play(SystemSoundType.alert);
   }
 
