@@ -75,8 +75,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
             ? Get.find<TrackingController>()
             : null);
     if (ctrl == null)
-      return const Scaffold(
-        body: Center(child: Text('No active tracking session')),
+      return Scaffold(
+        body: Center(child: Text('tracking.no_session'.tr)),
       );
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -84,7 +84,9 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         title: Obx(() {
           final status = ctrl.trackingStatus.value;
           return Text(
-            status == 'arrived' ? 'Volunteer Arrived' : 'Live Tracking',
+            status == 'arrived'
+                ? 'tracking.arrived'.tr
+                : 'tracking.live'.tr,
           );
         }),
         centerTitle: true,
@@ -222,7 +224,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                     children: [
                       _StatItem(
                         icon: Icons.route_rounded,
-                        label: 'Distance',
+                        label: 'tracking.distance'.tr,
                         value:
                             dist != null
                                 ? '${dist.toStringAsFixed(1)} km'
@@ -231,7 +233,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                       ),
                       _StatItem(
                         icon: Icons.access_time_rounded,
-                        label: 'ETA',
+                        label: 'tracking.eta'.tr,
                         value: eta != null ? '~$eta min' : '--',
                         color: AppColors.amberOrange,
                       ),
@@ -240,13 +242,13 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                             status == 'arrived'
                                 ? Icons.check_circle
                                 : Icons.navigation,
-                        label: 'Status',
+                        label: 'tracking.status'.tr,
                         value:
                             status == 'arrived'
-                                ? 'Arrived'
+                                ? 'tracking.status_arrived'.tr
                                 : status == 'en_route'
-                                ? 'En Route'
-                                : 'Waiting',
+                                ? 'tracking.status_enroute'.tr
+                                : 'tracking.status_waiting'.tr,
                         color:
                             status == 'arrived'
                                 ? AppColors.reliefGreen

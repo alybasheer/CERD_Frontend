@@ -125,7 +125,7 @@ Widget requestCard(
                                 SizedBox(width: 3),
                               ],
                               Text(
-                                isSos ? 'EMERGENCY' : 'common.urgent'.tr,
+                                isSos ? 'request.card.emergency'.tr : 'common.urgent'.tr,
                                 style: AppTextStyling.body_12S.copyWith(
                                   color: isSos
                                       ? AppColors.emergencyRed

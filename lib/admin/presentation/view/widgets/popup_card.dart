@@ -279,7 +279,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        status.isEmpty ? 'pending' : status.toUpperCase(),
+        _statusLabel(status),
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
@@ -287,6 +287,18 @@ class _StatusChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String _statusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case 'approved':
+      return 'common.approved'.tr;
+    case 'rejected':
+      return 'common.rejected'.tr;
+    case 'pending':
+    default:
+      return 'common.pending'.tr;
   }
 }
 

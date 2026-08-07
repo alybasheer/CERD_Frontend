@@ -126,7 +126,7 @@ class RequestHomeController extends GetxController {
 
   Future<void> sendSos() async {
     if (activeRequests.any(_isActiveSos)) {
-      ToastHelper.showWarning('You already have an active SOS.');
+      ToastHelper.showWarning('sos.already_active'.tr);
       return;
     }
 
@@ -153,7 +153,7 @@ class RequestHomeController extends GetxController {
           'locationName': locationName,
       });
       if (result.alreadyActive) {
-        ToastHelper.showWarning('You already have an active SOS.');
+        ToastHelper.showWarning('sos.already_active'.tr);
         await refreshDashboard();
         return;
       }
@@ -181,20 +181,18 @@ class RequestHomeController extends GetxController {
   Future<void> cancelActiveSos(HelpRequest request) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.sos, color: AppColors.emergencyRed),
+            const Icon(Icons.sos, color: AppColors.emergencyRed),
             SizedBox(width: 8),
-            Text('Cancel SOS?'),
+            Text('sos.cancel.title'.tr),
           ],
         ),
-        content: const Text(
-          'Cancelling will notify volunteers that help is no longer needed.',
-        ),
+        content: Text('sos.cancel.message'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Keep SOS'),
+            child: Text('sos.cancel.keep'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
@@ -202,7 +200,7 @@ class RequestHomeController extends GetxController {
               backgroundColor: AppColors.emergencyRed,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Yes, Cancel'),
+            child: Text('sos.cancel.confirm'.tr),
           ),
         ],
       ),
@@ -211,7 +209,7 @@ class RequestHomeController extends GetxController {
 
     try {
       await _repo.cancelSos();
-      ToastHelper.showSuccess('SOS cancelled.');
+      ToastHelper.showSuccess('sos.cancel'.tr);
       await refreshDashboard();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -227,25 +225,23 @@ class RequestHomeController extends GetxController {
             children: [
               Icon(Icons.sos, color: AppColors.emergencyRed),
               SizedBox(width: 8),
-              const Text('SOS Sent'),
+              Text('sos.sent.title'.tr),
             ],
           ),
           content: Text(
             notified > 0
-                ? 'Your SOS was sent to $notified nearby volunteer(s). '
-                      'Call a helpline if you need immediate support.'
-                : 'Your SOS was sent to nearby volunteers. '
-                      'Call a helpline if you need immediate support.',
+                ? 'sos.sent.message_count'.trParams({'count': '$notified'})
+                : 'sos.sent.message'.tr,
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: const Text('Done'),
+              child: Text('common.done'.tr),
             ),
             ElevatedButton.icon(
               onPressed: () => Get.back(result: true),
               icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
-              label: const Text('Call Helpline'),
+              label: Text('sos.call_helpline'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.emergencyRed,
                 foregroundColor: Colors.white,
@@ -281,7 +277,7 @@ class RequestHomeController extends GetxController {
                   padding: EdgeInsets.symmetric(vertical: AppSize.m),
                   child: Center(
                     child: Text(
-                      'Emergency Helplines',
+                      'sos.helplines.title'.tr,
                       style: AppTextStyling.title_16M.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -341,7 +337,7 @@ class RequestHomeController extends GetxController {
   void openRequestChat(HelpRequest request) {
     final volunteerId = request.acceptedBy?.trim() ?? '';
     if (volunteerId.isEmpty) {
-      ToastHelper.showWarning('A volunteer has not accepted this request yet.');
+      ToastHelper.showWarning('sos.chat_not_accepted'.tr);
       return;
     }
 
@@ -374,7 +370,7 @@ class RequestHomeController extends GetxController {
 
   void showCommunityBlocked() {
     ToastHelper.showWarning(
-      'You are not eligible because you are not a volunteer.',
+      'sos.not_volunteer'.tr,
     );
   }
 
@@ -484,9 +480,11 @@ class RequestHomeController extends GetxController {
           final radiusKm = data['radiusKm']?.toString();
           final minutes = data['minutes']?.toString();
           final msg = radiusKm != null && minutes != null
-              ? 'No volunteer accepted yet. SOS widened to '
-                    '$radiusKm km after $minutes minutes.'
-              : 'No volunteer accepted yet. SOS escalated to a wider area.';
+              ? 'sos.escalated_radius'.trParams({
+                  'radius': radiusKm,
+                  'minutes': minutes,
+                })
+              : 'sos.escalated'.tr;
           ToastHelper.showWarning(msg);
         }
       }
@@ -522,7 +520,7 @@ class RequestHomeController extends GetxController {
     ratingScore.value = 5;
     ratingCommentController.clear();
     Get.defaultDialog(
-      title: 'Rate volunteer',
+      title: 'sos.rating.title'.tr,
       content: Obx(
         () => Column(
           children: [
@@ -542,13 +540,15 @@ class RequestHomeController extends GetxController {
             TextField(
               controller: ratingCommentController,
               maxLines: 2,
-              decoration: const InputDecoration(hintText: 'Comment optional'),
+              decoration: InputDecoration(
+                hintText: 'sos.rating_comment'.tr,
+              ),
             ),
           ],
         ),
       ),
-      textConfirm: 'Submit',
-      textCancel: 'Later',
+      textConfirm: 'common.submit'.tr,
+      textCancel: 'common.later'.tr,
       confirmTextColor: Colors.white,
       onConfirm: () => submitRating(requestId),
     );
@@ -595,7 +595,7 @@ class RequestHomeController extends GetxController {
                 : ratingCommentController.text.trim(),
       );
       Get.back();
-      ToastHelper.showSuccess('Rating submitted.');
+      ToastHelper.showSuccess('sos.rating_submitted'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     }
@@ -664,3 +664,4 @@ class RequestHomeController extends GetxController {
     super.onClose();
   }
 }
+

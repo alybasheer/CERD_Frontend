@@ -171,7 +171,7 @@ class AppUpdateService {
     if (kIsWeb) return false;
     final url = await resolveDownloadUrl(info);
     if (url.isEmpty) {
-      ToastHelper.showError('Download link is missing.');
+      ToastHelper.showError('update.missing_link'.tr);
       return false;
     }
     final withUrl = UpdateInfo(
@@ -188,18 +188,19 @@ class AppUpdateService {
         PopScope(
           canPop: false,
           child: AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.system_update, color: AppColors.steelBlue),
-                SizedBox(width: 8),
-                Text('Update Available'),
-              ],
+            icon: Icon(Icons.system_update, color: AppColors.steelBlue),
+            title: Text('update.available'.tr),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: SingleChildScrollView(
+                child: _UpdateContent(info: withUrl),
+              ),
             ),
-            content: _UpdateContent(info: withUrl),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             actions: [
               TextButton(
                 onPressed: () => Get.back(result: false),
-                child: Text('Later'),
+                child: Text('common.later'.tr),
               ),
               ElevatedButton(
                 onPressed: () => Get.back(result: true),
@@ -207,7 +208,7 @@ class AppUpdateService {
                   backgroundColor: AppColors.steelBlue,
                   foregroundColor: Colors.white,
                 ),
-                child: Text('Update Now'),
+                child: Text('update.now'.tr),
               ),
             ],
           ),
@@ -234,22 +235,25 @@ class AppUpdateService {
           canPop: false,
           child: AlertDialog(
             icon: Icon(Icons.update, color: AppColors.emergencyRed),
-            title: const Text('Update required'),
-            content: const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'A newer version of the app is needed. '
-                  'Update to keep using the latest fixes.',
+            title: Text('update.required'.tr),
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('update.required_message'.tr),
+                    SizedBox(height: 12),
+                  ],
                 ),
-                SizedBox(height: 12),
-              ],
+              ),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             actions: [
               TextButton(
                 onPressed: () => Get.back(result: true),
-                child: const Text('Later'),
+                child: Text('common.later'.tr),
               ),
               ElevatedButton(
                 onPressed: () => Get.back(result: false),
@@ -257,7 +261,7 @@ class AppUpdateService {
                   backgroundColor: AppColors.emergencyRed,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Update Now'),
+                child: Text('update.now'.tr),
               ),
             ],
           ),
@@ -302,50 +306,47 @@ class AppUpdateService {
             builder: (context, value, _) {
               final pct = value < 0 ? 0.0 : value.clamp(0.0, 1.0);
               return AlertDialog(
-                title: const Row(
-                  children: [
-                    Icon(Icons.sync, color: AppColors.steelBlue),
-                    SizedBox(width: 8),
-                    Text('Downloading update'),
-                  ],
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value < 0
-                          ? 'Connecting…'
-                          : '${(value * 100).toStringAsFixed(0)}%',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: pct,
-                        minHeight: 10,
-                        backgroundColor:
-                            AppColors.steelBlue.withValues(alpha: 0.12),
-                        valueColor:
-                            AlwaysStoppedAnimation(AppColors.steelBlue),
+                title: Text('update.downloading'.tr),
+                content: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value < 0
+                            ? 'update.connecting'.tr
+                            : '${(value * 100).toStringAsFixed(0)}%',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'A smaller package that matches this phone is '
-                      'being downloaded.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                      SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: pct,
+                          minHeight: 10,
+                          backgroundColor:
+                              AppColors.steelBlue.withValues(alpha: 0.12),
+                          valueColor:
+                              AlwaysStoppedAnimation(AppColors.steelBlue),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'update.downloading_hint'.tr,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 actions: [
                   TextButton(
                     onPressed: () {
                       aborted = true;
                       dio.cancel();
                     },
-                    child: const Text('Cancel'),
+                    child: Text('common.cancel'.tr),
                   ),
                 ],
               );
@@ -374,7 +375,7 @@ class AppUpdateService {
       if (aborted) {
         // Cancelled → treat as "Later": snooze and re-prompt later.
         _storage.writeData(_dismissedAtKey, DateTime.now().toIso8601String());
-        ToastHelper.showInfo('Download cancelled. You can update later.');
+        ToastHelper.showInfo('update.cancelled'.tr);
         return false;
       }
 
@@ -389,7 +390,7 @@ class AppUpdateService {
 
       if (size < 1024 * 1024 * 5) {
         ToastHelper.showError(
-            'Download looks incomplete. Please try again later.');
+            'update.incomplete'.tr);
         return false;
       }
 
@@ -401,8 +402,7 @@ class AppUpdateService {
       if (result.type != ResultType.done) {
         debugPrint('📍 OpenFilex: ${result.type} - ${result.message}');
         ToastHelper.showError(
-            'Installer could not open (${result.message}). '
-            'Please install the APK manually.');
+            'update.installer_failed'.trParams({'message': result.message}));
         return false;
       }
       return true;
@@ -426,10 +426,13 @@ class _UpdateContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Version ${info.latestVersion} is ready'),
+        Text('update.version_ready'.trParams({'version': info.latestVersion})),
         if (info.releaseNotes.isNotEmpty) ...[
           SizedBox(height: 12),
-          Text('What\'s new:', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'update.whats_new'.tr,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           SizedBox(height: 4),
           Text(info.releaseNotes),
         ],

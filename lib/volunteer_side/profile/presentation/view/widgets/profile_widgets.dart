@@ -305,6 +305,71 @@ class ProfilePreferencesSection extends StatelessWidget {
 
   const ProfilePreferencesSection({super.key, required this.controller});
 
+  void _showLanguageChooser(
+    BuildContext context,
+    LocaleController localeController,
+  ) {
+    final theme = Theme.of(context);
+    Get.bottomSheet(
+      Material(
+        color: theme.colorScheme.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    'language.choose'.tr,
+                    style: AppTextStyling.title_16M.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.language_rounded),
+                title: Text('language.en'.tr),
+                trailing: localeController.isUrdu
+                    ? null
+                    : const Icon(Icons.check_rounded, color: AppColors.safetyBlue),
+                onTap: () {
+                  Get.back();
+                  if (localeController.isUrdu) {
+                    localeController.toggleLanguage();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.translate_rounded),
+                title: Text('language.ur'.tr),
+                trailing: localeController.isUrdu
+                    ? const Icon(Icons.check_rounded, color: AppColors.safetyBlue)
+                    : null,
+                onTap: () {
+                  Get.back();
+                  if (!localeController.isUrdu) {
+                    localeController.toggleLanguage();
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _ProfileSection(
@@ -360,7 +425,7 @@ class ProfilePreferencesSection extends StatelessWidget {
                 ),
               ),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: localeController.toggleLanguage,
+              onTap: () => _showLanguageChooser(context, localeController),
             ),
           ],
         );

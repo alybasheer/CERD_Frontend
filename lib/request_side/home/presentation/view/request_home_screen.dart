@@ -189,7 +189,7 @@ class _SosStatusCardState extends State<_SosStatusCard> {
               const Icon(Icons.sos, color: Colors.white, size: 26),
               SizedBox(width: AppSize.s),
               Text(
-                'SOS ACTIVE',
+                'sos.status.active'.tr,
                 style: AppTextStyling.title_16M.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -208,8 +208,10 @@ class _SosStatusCardState extends State<_SosStatusCard> {
           SizedBox(height: AppSize.sH),
           Text(
             notified != null && notified > 0
-                ? '$notified nearby volunteer(s) notified'
-                : 'Nearby volunteers notified',
+                ? 'sos.status.notified_count'.trParams({
+                    'count': '$notified',
+                  })
+                : 'sos.status.notified'.tr,
             style: AppTextStyling.body_14M.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w600,
@@ -222,7 +224,7 @@ class _SosStatusCardState extends State<_SosStatusCard> {
                 child: OutlinedButton.icon(
                   onPressed: widget.onCallHelpline,
                   icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
-                  label: const Text('Helpline'),
+                  label: Text('common.helpline'.tr),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: BorderSide(
@@ -236,7 +238,7 @@ class _SosStatusCardState extends State<_SosStatusCard> {
                 child: TextButton.icon(
                   onPressed: widget.onCancel,
                   icon: const Icon(Icons.close_rounded, size: 18),
-                  label: const Text('Cancel SOS'),
+                  label: Text('sos.cancel'.tr),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white,
                   ),
@@ -297,7 +299,7 @@ class _SosSnoozeRowState extends State<_SosSnoozeRow> {
                 padding: EdgeInsets.symmetric(vertical: AppSize.m),
                 child: Center(
                   child: Text(
-                    'Snooze SOS alerts',
+                    'sos.snooze.title'.tr,
                     style: AppTextStyling.title_16M.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -308,11 +310,11 @@ class _SosSnoozeRowState extends State<_SosSnoozeRow> {
               ..._snoozeOptions.map(
                 (entry) => ListTile(
                   leading: const Icon(Icons.bedtime_rounded),
-                  title: Text('Snooze ${entry.label}'),
+                  title: Text('sos.snooze.option'.trParams({'min': entry.label})),
                   subtitle: Text(
                     entry.duration == const Duration(minutes: 5)
-                        ? 'Recommended'
-                        : 'Pause the ringing and vibration',
+                        ? 'sos.snooze.recommended'.tr
+                        : 'sos.snooze.pause_hint'.tr,
                   ),
                   trailing: const Icon(Icons.alarm_off_rounded, size: 20),
                   onTap: () {
@@ -344,23 +346,33 @@ class _SosSnoozeRowState extends State<_SosSnoozeRow> {
         children: [
           Expanded(
             child: Chip(
-              avatar: const Icon(Icons.bedtime_rounded, size: 18),
+              avatar: const Icon(
+                Icons.bedtime_rounded,
+                size: 18,
+                color: AppColors.emergencyRed,
+              ),
               label: Text(
-                'Ringing paused — ${widget.controller.snoozeLabel}',
+                'sos.snooze.paused'.trParams({'time': widget.controller.snoozeLabel}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.4),
+              backgroundColor: Colors.white,
+              labelStyle: const TextStyle(
+                color: AppColors.emergencyRed,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
               ),
-              backgroundColor: Colors.white.withValues(alpha: 0.14),
-              labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
           ),
+          SizedBox(width: AppSize.s),
           TextButton.icon(
             onPressed: widget.controller.clearSnooze,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Resume'),
+            label: Text('sos.snooze.resume'.tr),
             style: TextButton.styleFrom(foregroundColor: Colors.white),
           ),
         ],
@@ -372,7 +384,7 @@ class _SosSnoozeRowState extends State<_SosSnoozeRow> {
       child: TextButton.icon(
         onPressed: _pickSnoozeDuration,
         icon: const Icon(Icons.bedtime_rounded, size: 18),
-        label: const Text('Snooze'),
+        label: Text('sos.snooze'.tr),
         style: TextButton.styleFrom(foregroundColor: Colors.white),
       ),
     );
@@ -481,7 +493,7 @@ class _TrackingMapSection extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => Get.toNamed(RouteNames.trackingMap),
                     icon: const Icon(Icons.fullscreen, size: 16),
-                    label: const Text('View Map'),
+                    label: Text('sos.tracking.view_map'.tr),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.steelBlue,
                       padding: EdgeInsets.symmetric(horizontal: AppSize.s),
@@ -627,7 +639,7 @@ class _HelplineButton extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: onTap,
         icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
-        label: const Text('Helpline'),
+        label: Text('common.helpline'.tr),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.steelBlue,
           side: BorderSide(

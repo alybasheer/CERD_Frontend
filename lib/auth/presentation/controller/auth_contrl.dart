@@ -82,7 +82,7 @@ class AuthController extends GetxController {
   // ============ CONFIRM PASSWORD VALIDATION ============
   String? validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
-      confirmPasswordError.value = 'Please confirm your password';
+      confirmPasswordError.value = 'auth.error.confirm_password'.tr;
       return confirmPasswordError.value;
     }
 
@@ -121,7 +121,7 @@ class AuthController extends GetxController {
   // ============ LOGIN ============
   Future<void> onLogin() async {
     if (!loginFormKey.currentState!.validate()) {
-      ToastHelper.showError('Please fix the errors above');
+      ToastHelper.showError('auth.error.fix_errors'.tr);
       return;
     }
 
@@ -194,7 +194,7 @@ class AuthController extends GetxController {
       print('Role: ${StorageHelper().readData('role')}');
 
       // Show success message
-      ToastHelper.showSuccess('Login successful!');
+      ToastHelper.showSuccess('auth.success.login'.tr);
 
       // Navigate based on the backend account role, not the chosen app mode.
       Future.delayed(Duration(milliseconds: 500), () async {
@@ -211,13 +211,13 @@ class AuthController extends GetxController {
   // ============ REGISTER ============
   Future<void> onRegisterClick() async {
     if (!registerFormKey.currentState!.validate()) {
-      ToastHelper.showError('Please fix the errors above');
+      ToastHelper.showError('auth.error.fix_errors'.tr);
       return;
     }
 
     // Validate confirm password matches
     if (passController.text != confirmPassController.text) {
-      ToastHelper.showError('Passwords do not match');
+      ToastHelper.showError('auth.error.passwords_mismatch'.tr);
       return;
     }
 
@@ -280,7 +280,7 @@ class AuthController extends GetxController {
       print('✅ Registration successful');
 
       // Show success message
-      ToastHelper.showSuccess('Account created successfully!');
+      ToastHelper.showSuccess('auth.success.register'.tr);
 
       // Navigate to role selection
       Future.delayed(Duration(milliseconds: 500), () {
@@ -303,13 +303,13 @@ class AuthController extends GetxController {
 
       if (result['success'] == true) {
         final model = result['data'] as SignupModel;
-        ToastHelper.showSuccess('Google sign-in successful!');
+        ToastHelper.showSuccess('auth.success.google'.tr);
         Future.delayed(const Duration(milliseconds: 500), () async {
           await _navigateAfterLogin(model.user!);
         });
       } else {
         ToastHelper.showError(
-          (result['message'] as String?) ?? 'Google sign-in failed',
+          (result['message'] as String?) ?? 'auth.error.google_failed'.tr,
         );
       }
     } catch (e) {
@@ -384,7 +384,7 @@ class AuthController extends GetxController {
     if (status.hasApplication && status.isApproved) {
       StorageHelper().saveData('verificationStatus', status.status);
       ToastHelper.showSuccess(
-        'Your volunteer approval is ready. Please log in again.',
+        'auth.volunteer.approved_relogin'.tr,
       );
       await logout();
       return;

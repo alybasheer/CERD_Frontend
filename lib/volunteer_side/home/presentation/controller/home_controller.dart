@@ -74,14 +74,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   Future<void> acceptRequest(HelpRequest request) async {
     final id = request.sId;
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('Request is not available right now.');
+      ToastHelper.showError('volunteer.home.request_unavailable'.tr);
       return;
     }
     if (acceptingRequestIds.contains(id)) {
       return;
     }
     if (!_isNotOwnRequest(request)) {
-      ToastHelper.showWarning('You cannot accept your own request.');
+      ToastHelper.showWarning('volunteer.home.cannot_accept_own'.tr);
       await fetchRequests();
       return;
     }
@@ -223,7 +223,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
             children: [
               Icon(Icons.sos, color: AppColors.emergencyRed),
               SizedBox(width: 8),
-              const Text('SOS EMERGENCY'),
+              Text('request.home.sos'.tr),
             ],
           ),
           content: Column(
@@ -257,7 +257,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
               ),
               SizedBox(height: AppSize.sH),
               Text(
-                'A nearby person needs urgent help. Respond now.',
+                'volunteer.home.sos_intro'.tr,
                 style: AppTextStyling.body_14M.copyWith(
                   color: AppColors.emergencyRed,
                   fontWeight: FontWeight.w600,
@@ -268,7 +268,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
           actions: [
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text('Later'),
+              child: Text('common.later'.tr),
             ),
             ElevatedButton.icon(
               onPressed: () {
@@ -276,7 +276,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
                 acceptRequest(request);
               },
               icon: const Icon(Icons.navigation_rounded, size: 18),
-              label: const Text('Accept & Navigate'),
+              label: Text('volunteer.home.accept_navigate'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.emergencyRed,
                 foregroundColor: Colors.white,
@@ -349,7 +349,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     if (storedName is String && storedName.trim().isNotEmpty) {
       fullName.value = storedName.trim();
     } else {
-      fullName.value = 'Volunteer User';
+      fullName.value = 'volunteer.home.default_name'.tr;
     }
 
     final storedLocation =
@@ -360,13 +360,13 @@ class HomeController extends GetxController with WidgetsBindingObserver {
       final location = storedLocation.trim();
       locationName.value =
           isGenericLocationLabel(location)
-              ? 'Resolving nearby area...'
+              ? 'volunteer.home.resolving_area'.tr
               : location;
       if (isGenericLocationLabel(location)) {
         unawaited(_resolveStoredLocation(location));
       }
     } else {
-      locationName.value = 'Resolving nearby area...';
+      locationName.value = 'volunteer.home.resolving_area'.tr;
     }
 
     volunteerRating.value =

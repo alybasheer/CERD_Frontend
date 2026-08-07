@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/request_side/create_help_request/presentation/controller/request_help_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class RequestUploadCard extends StatelessWidget {
   final List<RequestPhoto> photos;
@@ -45,7 +46,9 @@ class RequestUploadCard extends StatelessWidget {
                       SizedBox(width: AppSize.xs),
                       Expanded(
                         child: Text(
-                          '${photos.length}/2 situation photos',
+                          'request.form.photo_progress'.trParams({
+                            'count': photos.length.toString(),
+                          }),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyling.body_14M.copyWith(
@@ -58,7 +61,7 @@ class RequestUploadCard extends StatelessWidget {
                         TextButton.icon(
                           onPressed: onTap,
                           icon: const Icon(Icons.add_photo_alternate, size: 18),
-                          label: const Text('Add'),
+                          label: Text('request.form.add'.tr),
                           style: TextButton.styleFrom(
                             foregroundColor: scheme.primary,
                             minimumSize: Size.zero,
@@ -112,7 +115,7 @@ class _EmptyUploadState extends StatelessWidget {
             ),
             SizedBox(height: AppSize.xsH),
             Text(
-              'Add situation photos',
+              'request.form.add_photos'.tr,
               style: AppTextStyling.body_14M.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w700,
@@ -120,7 +123,7 @@ class _EmptyUploadState extends StatelessWidget {
             ),
             SizedBox(height: AppSize.xsH),
             Text(
-              'Up to 2 images, 5MB each',
+              'request.form.photo_limit'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.onSurfaceVariant,
               ),

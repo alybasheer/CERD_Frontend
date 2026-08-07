@@ -44,9 +44,7 @@ class AlertsController extends GetxController {
     final locationName = locationNameController.text.trim();
 
     if (title.isEmpty || description.isEmpty || locationName.isEmpty) {
-      ToastHelper.showError(
-        'Please fill alert title, description, and location.',
-      );
+      ToastHelper.showError('alerts.fill_required'.tr);
       return;
     }
 
@@ -64,7 +62,7 @@ class AlertsController extends GetxController {
       titleController.clear();
       descriptionController.clear();
       locationNameController.clear();
-      ToastHelper.showSuccess('Alert sent.');
+      ToastHelper.showSuccess('alerts.sent'.tr);
       await fetchAlerts();
     } catch (e) {
       ToastHelper.showErrorMessage(e);

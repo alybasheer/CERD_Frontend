@@ -35,7 +35,8 @@ class CommunitiesScreen extends StatelessWidget {
                 children: [
                   _filterChip(controller, null, 'communities.filter_all'.tr),
                   ...controller.categories.map(
-                    (category) => _filterChip(controller, category, category),
+                    (category) =>
+                        _filterChip(controller, category, _categoryLabel(category)),
                   ),
                 ],
               ),
@@ -138,7 +139,10 @@ class CommunitiesScreen extends StatelessWidget {
                     items:
                         controller.categories
                             .map(
-                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(_categoryLabel(e)),
+                              ),
                             )
                             .toList(),
                     onChanged:
@@ -242,7 +246,7 @@ class _CommunityCard extends StatelessWidget {
           ),
           SizedBox(height: AppSize.sH),
           Text(
-            '${community.category} - ${community.locationName}',
+            '${_categoryLabel(community.category)} - ${community.locationName}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTextStyling.body_12S.copyWith(
@@ -344,5 +348,22 @@ class _CommunityCard extends StatelessWidget {
       ),
       isScrollControlled: true,
     );
+  }
+}
+
+String _categoryLabel(String category) {
+  switch (category) {
+    case 'Natural Disaster':
+      return 'community.form.cat_natural_disaster'.tr;
+    case 'Medical':
+      return 'community.form.cat_medical'.tr;
+    case 'Accident':
+      return 'community.form.cat_accident'.tr;
+    case 'Shelter':
+      return 'community.form.cat_shelter'.tr;
+    case 'Other':
+      return 'community.form.cat_other'.tr;
+    default:
+      return category;
   }
 }

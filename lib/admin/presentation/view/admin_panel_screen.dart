@@ -257,7 +257,7 @@ class _ApplicationCard extends StatelessWidget {
             : <String, dynamic>{};
     final name =
         _stringValue(item['name']).isEmpty
-            ? 'No Name'
+            ? 'admin.no_name'.tr
             : _stringValue(item['name']);
     final status =
         _stringValue(item['status']).isEmpty

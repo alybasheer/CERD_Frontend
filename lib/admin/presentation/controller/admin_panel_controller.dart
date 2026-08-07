@@ -111,7 +111,7 @@ class AdminPanelController extends GetxController {
         .post(url: ApiNames.approveVolunteer(applicationId), isauthorize: true)
         .then((value) async {
           Get.back();
-          ToastHelper.showSuccess('Volunteer approved.');
+          ToastHelper.showSuccess('admin.volunteer_approved'.tr);
           await fetchVolunteerApplications();
           await refreshCounts();
         });
@@ -122,7 +122,7 @@ class AdminPanelController extends GetxController {
         .post(url: ApiNames.rejectVolunteer(applicationId), isauthorize: true)
         .then((value) async {
           Get.back();
-          ToastHelper.showSuccess('Volunteer rejected.');
+          ToastHelper.showSuccess('admin.volunteer_rejected'.tr);
           await fetchVolunteerApplications();
           await refreshCounts();
         });

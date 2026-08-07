@@ -19,9 +19,9 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Volunteer Verification',
-        subtitle: 'Complete your details for review',
+      appBar: WeHelpAppBar(
+        title: 'verification.title',
+        subtitle: 'verification.subtitle',
         showBack: true,
       ),
       body: SafeArea(
@@ -37,7 +37,7 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // HEADER
                   Text(
-                    'Complete Your Profile',
+                    'verification.complete_profile'.tr,
                     style: AppTextStyling.title_30M.copyWith(
                       color: AppColors.safetyBlue,
                       fontWeight: FontWeight.bold,
@@ -45,7 +45,7 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
                   ),
                   AppSize.mHeight,
                   Text(
-                    'Provide your details for admin verification',
+                    'verification.subtitle'.tr,
                     style: AppTextStyling.body_12S.copyWith(
                       color: AppColors.grey,
                       height: 1.5,
@@ -56,9 +56,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
                   // PROFILE PHOTO
                   Obx(
                     () => VerificationImagePicker(
-                      label: 'Profile Photo',
-                      helperText:
-                          'Optional. If added, it will appear as your volunteer profile avatar.',
+                      label: 'verification.profile_photo_label'.tr,
+                      helperText: 'verification.profile_photo_helper'.tr,
                       imageBytes: controller.profilePhoto.value?.bytes,
                       fileName: controller.profilePhoto.value?.name,
                       onTap: () => controller.pickProfilePhoto(),
@@ -68,8 +67,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // FULL NAME FIELD
                   VerificationTextField(
-                    label: 'Full Name',
-                    hintText: 'Alee',
+                    label: 'verification.full_name'.tr,
+                    hintText: 'verification.full_name_hint'.tr,
                     controller: controller.fullNameController,
                     validator: (val) => controller.validateFullName(val),
                     keyboardType: TextInputType.name,
@@ -85,8 +84,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // EMAIL FIELD
                   VerificationTextField(
-                    label: 'Email Address',
-                    hintText: 'alee@example.com',
+                    label: 'auth.email.label'.tr,
+                    hintText: 'auth.email.hint'.tr,
                     controller: controller.emailController,
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: Icons.email_outlined,
@@ -95,8 +94,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // EXPERTISE FIELD
                   VerificationTextField(
-                    label: 'Area of Expertise',
-                    hintText: 'e.g., Medical, Search & Rescue, Logistics',
+                    label: 'verification.expertise'.tr,
+                    hintText: 'verification.expertise_hint'.tr,
                     controller: controller.expertiseController,
                     validator: (val) => controller.validateExpertise(val),
                     keyboardType: TextInputType.text,
@@ -112,8 +111,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // CNIC FIELD
                   VerificationTextField(
-                    label: 'CNIC Number',
-                    hintText: 'Format: XXXXX-XXXXXXX-X',
+                    label: 'verification.cnic_number'.tr,
+                    hintText: 'verification.cnic_format_hint'.tr,
                     controller: controller.cnicController,
                     validator: (val) => controller.validateCNIC(val),
                     keyboardType: TextInputType.number,
@@ -127,8 +126,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // CITY FIELD
                   VerificationTextField(
-                    label: 'City',
-                    hintText: 'Enter your city',
+                    label: 'verification.city'.tr,
+                    hintText: 'verification.city_hint'.tr,
                     controller: controller.cityController,
                     validator: (val) => controller.validateCity(val),
                     keyboardType: TextInputType.text,
@@ -144,8 +143,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // LOCATION FIELD
                   VerificationTextField(
-                    label: 'Location/Address',
-                    hintText: 'Enter your detailed location',
+                    label: 'verification.location_address'.tr,
+                    hintText: 'verification.location_hint'.tr,
                     controller: controller.locationController,
                     validator: (val) => controller.validateLocation(val),
                     keyboardType: TextInputType.text,
@@ -161,8 +160,8 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
 
                   // DESCRIPTION/REASON FIELD
                   VerificationTextField(
-                    label: 'Why do you want to volunteer?',
-                    hintText: 'Tell us your motivation for volunteering...',
+                    label: 'verification.why_volunteer'.tr,
+                    hintText: 'verification.why_volunteer_hint'.tr,
                     controller: controller.descriptionController,
                     validator: (val) => controller.validateDescription(val),
                     keyboardType: TextInputType.multiline,
@@ -177,7 +176,7 @@ class AdminVerificationScreenProfessional extends StatelessWidget {
                     () => VerificationSubmitButton(
                       isLoading: controller.isSubmitting.value,
                       onPressed: () => controller.submitVerification(),
-                      label: 'Submit for Verification',
+                      label: 'verification.submit_btn'.tr,
                     ),
                   ),
 

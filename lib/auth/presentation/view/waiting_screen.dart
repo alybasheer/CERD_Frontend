@@ -159,11 +159,11 @@ class _WaitingScreenState extends State<WaitingScreen>
 
                     /// Title - Changes based on status
                     Obx(() {
-                      String title = "Awaiting Admin Approval";
+                      String title = 'waiting.title_pending'.tr;
                       if (controller.isApproved.value) {
-                        title = "Application Approved! ✅";
+                        title = 'waiting.title_approved'.tr;
                       } else if (controller.isRejected.value) {
-                        title = "Application Rejected ❌";
+                        title = 'waiting.title_rejected'.tr;
                       }
                       return Text(
                         title,
@@ -186,12 +186,12 @@ class _WaitingScreenState extends State<WaitingScreen>
                     /// Subtitle - Changes based on status
                     Obx(() {
                       String subtitle =
-                          "Your account is being reviewed.\nWe'll notify you shortly.";
+                          'waiting.subtitle_pending'.tr;
                       if (controller.isApproved.value) {
                         subtitle =
-                            "Welcome to our community!\nRedirecting to home...";
+                            'waiting.subtitle_approved'.tr;
                       } else if (controller.isRejected.value) {
-                        subtitle = "Please try again later or contact support.";
+                        subtitle = 'waiting.subtitle_rejected'.tr;
                       }
                       return Text(
                         subtitle,

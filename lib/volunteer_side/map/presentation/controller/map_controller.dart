@@ -110,7 +110,7 @@ class MapCntrl extends GetxController {
               ? Get.find<ChatProvider>()
               : Get.put(ChatProvider());
       provider.emitStartTracking(requestId);
-      ToastHelper.showSuccess('Live tracking started');
+      ToastHelper.showSuccess('map.tracking_started'.tr);
     } catch (_) {}
   }
 
@@ -124,7 +124,7 @@ class MapCntrl extends GetxController {
               ? Get.find<ChatProvider>()
               : Get.put(ChatProvider());
       provider.emitStopTracking(requestId);
-      ToastHelper.showSuccess('Tracking ended');
+      ToastHelper.showSuccess('map.tracking_ended'.tr);
     } catch (_) {}
   }
 
@@ -132,7 +132,7 @@ class MapCntrl extends GetxController {
     final request = activeRequest.value;
     final id = request?.sId?.trim();
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('No active request to complete.');
+      ToastHelper.showError('map.no_active_complete'.tr);
       return;
     }
 
@@ -141,7 +141,7 @@ class MapCntrl extends GetxController {
       await _helpRequestRepo.resolveRequest(id);
       _clearActiveRequest();
       _refreshVolunteerDashboard(completed: true);
-      ToastHelper.showSuccess('Request completed.');
+      ToastHelper.showSuccess('map.request_completed'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
@@ -153,7 +153,7 @@ class MapCntrl extends GetxController {
     final request = activeRequest.value;
     final id = request?.sId?.trim();
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('No active request to cancel.');
+      ToastHelper.showError('map.no_active_cancel'.tr);
       return;
     }
 
@@ -162,7 +162,7 @@ class MapCntrl extends GetxController {
       await _helpRequestRepo.releaseRequest(id);
       _clearActiveRequest();
       _refreshVolunteerDashboard();
-      ToastHelper.showSuccess('Request cancelled.');
+      ToastHelper.showSuccess('map.request_cancelled'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
@@ -174,7 +174,7 @@ class MapCntrl extends GetxController {
     final request = activeRequest.value;
     final userId = request?.userId?.trim();
     if (userId == null || userId.isEmpty) {
-      ToastHelper.showError('Chat is not available for this request.');
+      ToastHelper.showError('map.chat_unavailable'.tr);
       return;
     }
 
@@ -182,7 +182,7 @@ class MapCntrl extends GetxController {
       RouteNames.chatDetail,
       arguments: {
         'userId': userId,
-        'userName': request?.userName ?? 'Requestee',
+        'userName': request?.userName ?? 'map.requestee_fallback'.tr,
       },
     );
   }
@@ -202,7 +202,7 @@ class MapCntrl extends GetxController {
       if (permission == LocationPermission.deniedForever) {
         print(' Location permission denied forever! Opening app settings...');
         ToastHelper.showWarning(
-          'Location permission is required to refresh the map.',
+          'map.permission_message'.tr,
         );
         await Geolocator.openLocationSettings();
         return;

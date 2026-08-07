@@ -73,7 +73,7 @@ class CommunitiesController extends GetxController {
     final peopleRequired = int.tryParse(peopleRequiredController.text.trim());
 
     if (!isVolunteer) {
-      ToastHelper.showWarning('Only volunteers can create communities.');
+      ToastHelper.showWarning('community.form.only_volunteers'.tr);
       return;
     }
     if (title.isEmpty ||
@@ -82,7 +82,7 @@ class CommunitiesController extends GetxController {
         timeNeeded.isEmpty ||
         locationName.isEmpty ||
         peopleRequired == null) {
-      ToastHelper.showError('Please complete all community fields.');
+      ToastHelper.showError('community.form.complete_fields'.tr);
       return;
     }
 
@@ -101,7 +101,7 @@ class CommunitiesController extends GetxController {
       });
       Get.back();
       _clearCreateFields();
-      ToastHelper.showSuccess('Community published.');
+      ToastHelper.showSuccess('community.form.published'.tr);
       await fetchCommunities();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -113,7 +113,7 @@ class CommunitiesController extends GetxController {
   Future<void> joinCommunity(CommunityModel community) async {
     try {
       await _repo.joinCommunity(community.id);
-      ToastHelper.showSuccess('Joined community.');
+      ToastHelper.showSuccess('community.form.joined'.tr);
       await fetchCommunities();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -123,7 +123,7 @@ class CommunitiesController extends GetxController {
   Future<void> startCommunity(CommunityModel community) async {
     try {
       await _repo.startCommunity(community.id);
-      ToastHelper.showSuccess('Community started.');
+      ToastHelper.showSuccess('community.form.started'.tr);
       await fetchCommunities();
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -133,7 +133,7 @@ class CommunitiesController extends GetxController {
   Future<void> deleteCommunity(CommunityModel community) async {
     try {
       await _repo.deleteCommunity(community.id);
-      ToastHelper.showSuccess('Community deleted.');
+      ToastHelper.showSuccess('community.form.deleted'.tr);
       await fetchCommunities();
     } catch (e) {
       ToastHelper.showErrorMessage(e);

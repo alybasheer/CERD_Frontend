@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class RequestHelpFab extends StatelessWidget {
   final VoidCallback onPressed;
@@ -20,7 +21,7 @@ class RequestHelpFab extends StatelessWidget {
       label: Padding(
         padding: EdgeInsets.symmetric(horizontal: AppSize.s),
         child: Text(
-          'Request Help',
+          'request_help.title'.tr,
           style: AppTextStyling.body_14M.copyWith(
             color: AppColors.pureWhite,
             fontWeight: FontWeight.w600,
