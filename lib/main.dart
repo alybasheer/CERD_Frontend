@@ -11,6 +11,7 @@ import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/app_update_service.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_theme.dart';
 import 'package:fyp_source_code/volunteer_side/profile/presentation/controller/profile_controller.dart';
+import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -55,6 +56,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _scheduleUpdateCheck();
+      _ensureSocketConnected();
+    }
+  }
+
+  /// Real-time delivery depends on a live socket. On every app resume,
+  /// reconnect (with the current token) if the socket dropped, so requests
+  /// are received instantly without restarting the app.
+  void _ensureSocketConnected() {
+    if (Get.isRegistered<ChatProvider>()) {
+      Get.find<ChatProvider>().ensureConnected();
     }
   }
 

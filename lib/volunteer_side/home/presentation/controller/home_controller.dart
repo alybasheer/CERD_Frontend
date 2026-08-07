@@ -13,6 +13,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_repo.dart';
 import 'package:get/get.dart';
 import 'package:vibration/vibration.dart';
 
@@ -44,7 +45,26 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       fetchVolunteerStats();
+      _refreshLocationOnResume();
     }
+  }
+
+  /// Keeps the server-side volunteer location fresh so real-time "nearby"
+  /// delivery works even when the volunteer never opens the Map tab.
+  /// Without this the geo query in the backend excludes the volunteer.
+  void _refreshDbLocation(double latitude, double longitude) {
+    try {
+      MapRepo()
+          .updateCurrentLocation(lat: latitude, long: longitude)
+          .catchError((_) {});
+    } catch (_) {}
+  }
+
+  void _refreshLocationOnResume() {
+    getQuickPosition().then((position) {
+      _refreshDbLocation(position.latitude, position.longitude);
+      fetchRequests();
+    }).catchError((_) {});
   }
 
   Future<void> fetchRequests() async {
@@ -52,6 +72,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     try {
       final position = await getQuickPosition();
       _resolveHeaderLocation(position.latitude, position.longitude);
+      _refreshDbLocation(position.latitude, position.longitude);
       final list = await _repo.getOpenRequests(
         latitude: position.latitude,
         longitude: position.longitude,

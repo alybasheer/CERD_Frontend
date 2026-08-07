@@ -7,6 +7,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class SocketService {
   late IO.Socket _socket;
   bool _isInitialized = false;
+  String? _connectedToken;
 
   final _messageController = StreamController<Message>.broadcast();
   final _typingController = StreamController<Map<String, dynamic>>.broadcast();
@@ -31,12 +32,34 @@ class SocketService {
   bool get isConnected => _isInitialized && _socket.connected;
 
   /// 🔌 Connect with JWT Token
+  ///
+  /// Safe to call repeatedly:
+  /// - already connected with the same token → no-op
+  /// - same token but disconnected → reconnects the live socket
+  /// - different token (e.g. after logout/login as another user) → tears
+  ///   down the stale socket and registers the new identity server-side
   void connect(String token) {
     try {
-      // If already initialized and connected, just return
-      if (_isInitialized && _socket.connected) {
+      if (_isInitialized && _socket.connected && _connectedToken == token) {
         print('ℹ️ Socket already connected');
         return;
+      }
+
+      if (_isInitialized && _connectedToken == token) {
+        print('🔌 Socket exists but disconnected - reconnecting');
+        _socket.connect();
+        return;
+      }
+
+      if (_isInitialized) {
+        // Token changed: drop the stale socket so the server unregisters
+        // the old user before we register the new one.
+        print('🔄 Token changed - replacing socket connection');
+        try {
+          _socket.dispose();
+        } catch (_) {}
+        _isInitialized = false;
+        _connectedToken = null;
       }
 
       print('🔌 Connecting to WebSocket...');
@@ -50,12 +73,15 @@ class SocketService {
             .enableReconnection()
             .setReconnectionDelay(1000)
             .setReconnectionDelayMax(5000)
-            .setReconnectionAttempts(10)
+            // Practically unlimited: a slow cold start on the server must
+            // never permanently kill the real-time channel.
+            .setReconnectionAttempts(100000)
             .setAuth({'token': token})
             .disableAutoConnect() // optional, but safe
             .build(),
       );
 
+      _connectedToken = token;
       _isInitialized = true;
       _socket.connect();
       _setupListeners();
