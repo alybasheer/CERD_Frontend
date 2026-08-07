@@ -603,7 +603,7 @@ class RequestHomeController extends GetxController {
   // ── Sender-side SOS ringing / snooze ────────────────────────────────
 
   /// Vibrate + play the alert sound.
-  void ringSosAlarm({bool heavy = true}) {
+  void ringSosAlarm() {
     HapticFeedback.heavyImpact();
     SystemSound.play(SystemSoundType.alert);
   }
@@ -617,7 +617,7 @@ class RequestHomeController extends GetxController {
     if (shouldRing) {
       _sosReminderTimer ??= Timer.periodic(
         sosReminderInterval,
-        (_) => ringSosAlarm(heavy: false),
+        (_) => ringSosAlarm(),
       );
     } else {
       _sosReminderTimer?.cancel();

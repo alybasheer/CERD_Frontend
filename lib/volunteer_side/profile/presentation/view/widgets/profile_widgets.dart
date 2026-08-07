@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/localization/locale_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
@@ -309,27 +310,61 @@ class ProfilePreferencesSection extends StatelessWidget {
     return _ProfileSection(
       title: 'profile.preferences'.tr,
       icon: Icons.tune_rounded,
-      child: Obx(
-        () => SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          secondary: Icon(
-            controller.isSwitching.value
-                ? Icons.dark_mode_rounded
-                : Icons.light_mode_rounded,
-            color: AppColors.safetyBlue,
-          ),
-          title: Text(
-            'profile.dark_mode'.tr,
-            style: AppTextStyling.body_14M.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
+      child: Obx(() {
+        final localeController =
+            Get.isRegistered<LocaleController>()
+                ? Get.find<LocaleController>()
+                : Get.put(LocaleController());
+
+        return Column(
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(
+                controller.isSwitching.value
+                    ? Icons.dark_mode_rounded
+                    : Icons.light_mode_rounded,
+                color: AppColors.safetyBlue,
+              ),
+              title: Text(
+                'profile.dark_mode'.tr,
+                style: AppTextStyling.body_14M.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              value: controller.isSwitching.value,
+              activeThumbColor: AppColors.safetyBlue,
+              onChanged: controller.onSwitch,
             ),
-          ),
-          value: controller.isSwitching.value,
-          activeThumbColor: AppColors.safetyBlue,
-          onChanged: controller.onSwitch,
-        ),
-      ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.language_rounded,
+                color: AppColors.safetyBlue,
+              ),
+              title: Text(
+                'language.label'.tr,
+                style: AppTextStyling.body_14M.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: Text(
+                localeController.isUrdu
+                    ? 'language.ur'.tr
+                    : 'language.en'.tr,
+                style: AppTextStyling.body_12S.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: localeController.toggleLanguage,
+            ),
+          ],
+        );
+      }),
     );
   }
 }

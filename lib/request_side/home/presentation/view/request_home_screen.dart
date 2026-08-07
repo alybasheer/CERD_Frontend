@@ -279,31 +279,55 @@ class _SosSnoozeRowState extends State<_SosSnoozeRow> {
   }
 
   void _pickSnoozeDuration() {
+    final theme = Get.context?.theme;
     Get.bottomSheet(
-      SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Snooze alerts'),
-              subtitle: const Text('Pause the ringing and vibration'),
-              leading: const Icon(Icons.bedtime_rounded),
-            ),
-            const Divider(height: 1),
-            ..._snoozeOptions.map(
-              (entry) => ListTile(
-                title: Text('Snooze ${entry.label}'),
-                trailing: const Icon(Icons.alarm_off_rounded, size: 20),
-                onTap: () {
-                  Get.back();
-                  widget.controller.snoozeSos(entry.duration);
-                },
+      Material(
+        color: theme?.colorScheme.surface ?? Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSize.m),
+                child: Center(
+                  child: Text(
+                    'Snooze SOS alerts',
+                    style: AppTextStyling.title_16M.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: AppSize.sH),
-          ],
+              const Divider(height: 1),
+              ..._snoozeOptions.map(
+                (entry) => ListTile(
+                  leading: const Icon(Icons.bedtime_rounded),
+                  title: Text('Snooze ${entry.label}'),
+                  subtitle: Text(
+                    entry.duration == const Duration(minutes: 5)
+                        ? 'Recommended'
+                        : 'Pause the ringing and vibration',
+                  ),
+                  trailing: const Icon(Icons.alarm_off_rounded, size: 20),
+                  onTap: () {
+                    Get.back();
+                    widget.controller.snoozeSos(entry.duration);
+                  },
+                ),
+              ),
+              SizedBox(height: AppSize.mH),
+            ],
+          ),
         ),
       ),
+      isScrollControlled: true,
+      barrierColor: const Color(0x99000000),
     );
   }
 
