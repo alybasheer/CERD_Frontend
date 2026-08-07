@@ -34,7 +34,10 @@ class AppUpdateService {
   factory AppUpdateService() => _instance;
   AppUpdateService._();
 
-  static const _dismissedKey = 'dismissed_update_version';
+  static const _dismissedAtKey = 'dismissed_update_at';
+
+  /// How long a "Later" tap suppresses the prompt before it appears again.
+  static const remindLaterDelay = Duration(hours: 12);
 
   final StorageHelper _storage = StorageHelper();
 
@@ -67,10 +70,23 @@ class AppUpdateService {
         minRequired: minRequired,
       );
 
-      if (!required &&
-          _storage.readData(_dismissedKey)?.toString() == latest) {
-        debugPrint('📍 Update dismissed for v$latest, skipping');
-        return null;
+      // "Later" is only a short snooze: once remindLaterDelay passes we ask
+      // again. Required updates are never suppressed.
+      if (!required) {
+        final dismissedAt = _storage.readData(_dismissedAtKey);
+        if (dismissedAt != null) {
+          final at = DateTime.tryParse(dismissedAt.toString());
+          if (at != null &&
+              DateTime.now().isBefore(at.add(remindLaterDelay))) {
+            final remaining = at
+                .add(remindLaterDelay)
+                .difference(DateTime.now())
+                .inMinutes;
+            debugPrint('📍 Update snoozed for v$latest, re-prompt in '
+                '~$remaining min');
+            return null;
+          }
+        }
       }
 
       return UpdateInfo(
@@ -146,8 +162,10 @@ class AppUpdateService {
       if (confirmed == true) {
         await _downloadAndInstall(info.apkUrl);
       } else {
-        _storage.writeData(_dismissedKey, info.latestVersion);
-        debugPrint('📍 Update v${info.latestVersion} dismissed');
+        // Snooze, not permanent dismissal: the prompt comes back later.
+        _storage.writeData(_dismissedAtKey, DateTime.now().toIso8601String());
+        debugPrint('📍 Update v${info.latestVersion} snoozed '
+            '(${remindLaterDelay.inHours}h)');
       }
     }
     return true;
