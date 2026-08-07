@@ -402,7 +402,10 @@ class AppUpdateService {
       if (result.type != ResultType.done) {
         debugPrint('📍 OpenFilex: ${result.type} - ${result.message}');
         ToastHelper.showError(
-            'update.installer_failed'.trParams({'message': result.message}));
+            result.message.trim().isEmpty
+                ? 'update.installer_failed_plain'.tr
+                : 'update.installer_failed'.trParams(
+                    {'message': result.message.trim()}));
         return false;
       }
       return true;
@@ -426,7 +429,10 @@ class _UpdateContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('update.version_ready'.trParams({'version': info.latestVersion})),
+        Text(info.latestVersion.trim().isEmpty
+            ? 'update.available'.tr
+            : 'update.version_ready'.trParams(
+                {'version': info.latestVersion.trim()})),
         if (info.releaseNotes.isNotEmpty) ...[
           SizedBox(height: 12),
           Text(

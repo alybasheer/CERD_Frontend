@@ -457,7 +457,7 @@ class _ActiveRequestPanel extends StatelessWidget {
         distanceKm == null
             ? null
             : 'map.distance_away'.trParams(
-                {'distance': distanceKm!.toStringAsFixed(2)},
+                {'distance': '${distanceKm!.toStringAsFixed(2)} km'},
               );
 
     return Positioned(
