@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/admin/presentation/controller/admin_panel_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
@@ -55,7 +56,7 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                             backgroundColor: Colors.blue.withValues(
                               alpha: 0.10,
                             ),
-                            backgroundImage: NetworkImage(
+                            backgroundImage: CachedNetworkImageProvider(
                               _stringValue(data['profileImage']),
                               headers: imageHeaders,
                             ),

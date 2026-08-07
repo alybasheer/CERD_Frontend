@@ -187,12 +187,6 @@ class AuthController extends GetxController {
         );
       }
 
-      // Debug logs
-      print('✅ Login successful');
-      print('Token: ${StorageHelper().readData('token')}');
-      print('Email: ${StorageHelper().readData('email')}');
-      print('Role: ${StorageHelper().readData('role')}');
-
       // Show success message
       ToastHelper.showSuccess('auth.success.login'.tr);
 
@@ -201,8 +195,7 @@ class AuthController extends GetxController {
         await _navigateAfterLogin(resp.user!);
       });
     } catch (e) {
-      print('❌ Login error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -230,8 +223,6 @@ class AuthController extends GetxController {
         email: emailController.text.trim(),
         password: passController.text,
       );
-
-      print('📤 Register payload: ${signupModel.toJson()}');
 
       // Call API
       final resp = await RegisterRepo().postData(signupModel);
@@ -277,8 +268,6 @@ class AuthController extends GetxController {
         );
       }
 
-      print('✅ Registration successful');
-
       // Show success message
       ToastHelper.showSuccess('auth.success.register'.tr);
 
@@ -287,8 +276,7 @@ class AuthController extends GetxController {
         Get.offAllNamed(RouteNames.roleSelection);
       });
     } catch (e) {
-      print('❌ Register error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -313,8 +301,7 @@ class AuthController extends GetxController {
         );
       }
     } catch (e) {
-      print('Google Sign-In error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -353,14 +340,13 @@ class AuthController extends GetxController {
       clearLoginForm();
       clearRegisterForm();
       Get.offAllNamed(RouteNames.login);
-    } catch (e) {
-      print('Logout error: $e');
+    } catch (_) {
+      Get.offAllNamed(RouteNames.login);
     }
   }
 
   Future<void> _navigateAfterLogin(User signedInUser) async {
     final role = signedInUser.role?.toLowerCase().trim() ?? 'user';
-    print('Navigating user with backend role: $role');
 
     if (role == 'admin') {
       Get.offAllNamed(RouteNames.adminPanel);

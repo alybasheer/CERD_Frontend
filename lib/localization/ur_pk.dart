@@ -12,6 +12,7 @@ const Map<String, String> urPK = {
   'common.save': 'محفوظ کریں',
   'common.saving': 'محفوظ ہو رہا ہے',
   'common.got_it': 'ٹھیک ہے',
+  'common.retry': 'دوبارہ کوشش کریں',
   'common.rating': 'ریٹنگ',
   'common.ratings': 'ریٹنگز',
   'common.active': 'فعال',
@@ -145,6 +146,7 @@ const Map<String, String> urPK = {
   'communities.subtitle': 'رضاکار گروپس اور مقامی کام',
   'communities.filter_all': 'سب',
   'communities.no_requests': 'کوئی کمیونٹی درخواستیں نہیں ہیں',
+  'communities.no_requests_hint': 'یہاں ابھی کوئی کمیونٹی درخواست نہیں ہے۔ دوبارہ چیک کرنے کے لیے نیچے کھینچیں یا دوبارہ کوشش پر ٹیپ کریں۔',
   'communities.create_title': 'عنوان',
   'communities.create_details': 'تفصیلات',
   'communities.create_category': 'زمرہ',
@@ -157,6 +159,7 @@ const Map<String, String> urPK = {
   'alerts.title': 'الرٹس',
   'alerts.subtitle': 'آپ کے قریب لائیو حفاظتی اپ ڈیٹس',
   'alerts.no_recent': 'کوئی حالیہ الرٹ نہیں ہے',
+  'alerts.no_recent_hint': 'آپ کے قریب حفاظتی الرٹس یہاں ظاہر ہوں گے۔ دوبارہ چیک کرنے کے لیے دوبارہ کوشش پر ٹیپ کریں۔',
   'alerts.create_title': 'عنوان',
   'alerts.create_description': 'تفصیل',
   'alerts.create_location': 'مقام کا نام',
@@ -188,6 +191,8 @@ const Map<String, String> urPK = {
 
   // ── Volunteer Verification ─────────────────────────────────────────
   'verification.title': 'رضاکارانہ تصدیق',
+  'verification.approved_toast': 'آپ کی درخواست منظور ہو گئی ہے۔ رضاکار رسائی حاصل کرنے کے لیے براہ کرم دوبارہ لاگ ان کریں۔',
+  'verification.rejected_toast': 'آپ کی درخواست منظور نہیں ہوئی۔ براہ کرم بعد میں دوبارہ کوشش کریں یا سپورٹ سے رابطہ کریں۔',
   'verification.subtitle': 'ایڈمن کے جائزے کے لیے اپنی تفصیلات جمع کروائیں',
   'verification.submit_btn': 'تصدیق کے لیے جمع کروائیں',
   'verification.intro_title': 'اپنی شناخت کی تصدیق کریں',
@@ -281,15 +286,18 @@ const Map<String, String> urPK = {
   'profile.data_permissions': 'ڈیٹا اور اجازتیں',
   'profile.data_permissions.intro':
       'یہاں بتایا گیا ہے کہ ایپ آپ کے آلے اور ہمارے سرورز پر کیا محفوظ کرتی ہے، اور ہر اجازت کس کام کے لیے استعمال ہوتی ہے۔',
-  'profile.session_access': 'آپ کا لاگ ان سیشن',
+  'profile.session_access': 'سائن ان رہیں',
   'profile.session_access.text':
-      'ہم آپ کو سائن ان رکھتے ہیں تاکہ آپ کو بار بار لاگ ان نہ کرنا پڑے۔ سائن آؤٹ کرنے سے یہ سیشن فوراً ختم ہو جاتا ہے، بشمول آلے پر محفوظ فائلیں۔',
-  'profile.location_use': 'مقام شیئرنگ',
+      'سائن ان رہیں تاکہ آپ کو ہر بار لاگ ان نہ کرنا پڑے۔ سائن آؤٹ کرنے سے آپ کا سیشن ختم ہو جاتا ہے۔',
+  'profile.location_use': 'مقام',
   'profile.location_use.text':
-      'آپ کا مقام صرف اس وقت بھیجا جاتا ہے جب آپ مدد کی درخواست بنائیں یا SOS دبائیں، تاکہ قریبی رضاکار آپ کو تلاش کر سکیں۔ یہ کبھی عوامی طورہ شیئر نہیں کیا جا۔',
-  'profile.preferences': 'ایپ کی ترجیحات',
+      'ایپ کو اپنا مقام استعمال کرنے کی اجازت دیں تاکہ قریبی درخواستیں اور ہنگامی صورتحال درست طریقے سے کام کریں۔ یہ کبھی عوامی طور پر شیئر نہیں ہوتا۔',
+  'profile.notifications': 'اطلاعات',
+  'profile.notifications.text':
+      'ایپ کھلی ہونے پر SOS الرٹس اور اہم اپ ڈیٹس وصول کریں۔',
+  'profile.preferences': 'ایپ کی ترتیبات',
   'profile.preferences.text':
-      'آپ کی زبان اور ظاہری شکل کے انتخاب صرف آپ کے اس آلے پر محفوظ ہوتے ہیں۔ وہ کسی بھی وقت بدلے جا سکتے ہیں اور کہیں اور شیئ نہیں کیے جاتے۔',
+      'آپ کی زبان اور ظاہری شکل کے انتخاب صرف اس آلے پر محفوظ ہوتے ہیں۔',
   'profile.sign_out': 'سائن آؤٹ',
 
   // ── Admin info row labels ─────────────────────────────────────────
@@ -457,4 +465,11 @@ const Map<String, String> urPK = {
   'volunteer.home.default_name': 'رضاکار صارف',
   'volunteer.home.request_unavailable': 'درخواست ابھی دستیاب نہیں ہے۔',
   'volunteer.home.sos_intro': 'قریبی شخص کو فوری مدد کی ضرورت ہے۔ ابھی جواب دیں۔',
+  'toast.server_error': 'کچھ غلط ہو گیا۔ براہ کرم دوبارہ کوشش کریں۔',
+  'toast.network_error': 'نیٹ ورک کی خرابی۔ براہ کرم اپنا کنکشن چیک کریں۔',
+  'toast.timeout_error': 'درخواست میں زیادہ وقت لگا۔ براہ کرم دوبارہ کوشش کریں۔',
+  'toast.invalid_input': 'براہ کرم اپنی معلومات چیک کریں اور دوبارہ کوشش کریں۔',
+  'toast.session_expired': 'آپ کا سیشن ختم ہو گیا ہے۔ براہ کرم دوبارہ سائن ان کریں۔',
+  'toast.not_found': 'آپ جو تلاش کر رہے ہیں وہ نہیں ملا۔',
+  'toast.conflict': 'یہ عمل کسی موجودہ چیز سے متصادم ہے۔ براہ کرم کچھ اور کوشش کریں۔',
 };

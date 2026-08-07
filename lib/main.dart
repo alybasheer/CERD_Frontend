@@ -16,13 +16,15 @@ import 'package:get_storage/get_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await GetStorage.init();
+  await Future.wait([
+    Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ),
+    GetStorage.init(),
+  ]);
   final profileCtrl = Get.put(ProfileController());
   Get.put(LocaleController());
-  await Future.wait([profileCtrl.themeLoad()]);
+  await profileCtrl.themeLoad();
   runApp(const MyApp());
 }
 

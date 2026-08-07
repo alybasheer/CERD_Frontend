@@ -100,6 +100,9 @@ String _friendlyFromText(String? text) {
   if (lower.contains('null check') || lower.contains('type cast failed')) {
     return ToastMessages.serverError;
   }
+  if (lower.contains('check your input')) {
+    return ToastMessages.invalidInput;
+  }
 
   // Strip obvious technical noise before showing backend text.
   final cleaned = raw

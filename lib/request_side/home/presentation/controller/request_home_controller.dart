@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
+import 'package:fyp_source_code/network/exceptions.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
 import 'package:fyp_source_code/request_side/create_help_request/presentation/controller/request_help_controller.dart';
@@ -12,6 +13,7 @@ import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/helpline_service.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -132,8 +134,25 @@ class RequestHomeController extends GetxController {
 
     isSendingSos.value = true;
     try {
-      // Fast path: cached/last-known position, no blocking GPS fix.
-      final position = await getQuickPosition();
+      // Strict budget: SOS must fire within ~2s. Fall back to any recent
+      // cached position rather than waiting for a fresh GPS fix.
+      Position? position;
+      try {
+        position = await getQuickPosition().timeout(
+          const Duration(seconds: 2),
+        );
+      } catch (_) {
+        position = getCachedKnownPosition();
+      }
+      position ??= await Future<Position?>.value(
+        getCurrentLocation(useCacheFirst: true),
+      ).timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => getCachedKnownPosition(),
+      );
+      if (position == null) {
+        throw FetchDataExceptions('Unable to determine your location.');
+      }
 
       // Resolve a readable place name best-effort within a tiny budget so the
       // SOS fires immediately even if geocoding is slow.
@@ -145,13 +164,26 @@ class RequestHomeController extends GetxController {
         onTimeout: () => 'Location unavailable',
       );
 
-      final result = await _repo.createSos({
+      final body = {
         'title': 'SOS Emergency',
         'latitude': position.latitude,
         'longitude': position.longitude,
-        if (locationName != 'Location unavailable')
-          'locationName': locationName,
-      });
+        if (locationName != 'Location unavailable') 'locationName': locationName,
+      };
+
+      SosResult result;
+      try {
+        result = await _repo.createSos(body);
+      } on DioException catch (e) {
+        // One automatic retry on transient network issues.
+        if (_isRetryable(e)) {
+          await Future.delayed(const Duration(seconds: 1));
+          result = await _repo.createSos(body);
+        } else {
+          rethrow;
+        }
+      }
+
       if (result.alreadyActive) {
         ToastHelper.showWarning('sos.already_active'.tr);
         await refreshDashboard();
@@ -166,6 +198,14 @@ class RequestHomeController extends GetxController {
     } finally {
       isSendingSos.value = false;
     }
+  }
+
+  bool _isRetryable(Object error) {
+    if (error is! DioException) return false;
+    return error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError;
   }
 
   bool _isActiveSos(HelpRequest request) {
@@ -456,7 +496,6 @@ class RequestHomeController extends GetxController {
             : Get.put(ChatProvider());
     _flowSubscription = provider.flowEventStream.listen((event) async {
       final eventName = event['event']?.toString();
-      print('🔔 [FlowEvent] $eventName -> ${event['data']}');
       if (eventName == 'help_request_accepted' ||
           eventName == 'new_alert' ||
           eventName == 'help_request_cancelled' ||
@@ -571,13 +610,11 @@ class RequestHomeController extends GetxController {
       accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
     }
     if (accepted == null) {
-      print('⚠️ Accepted request $requestId not found in dashboard list.');
       return;
     }
     final loc = accepted.location;
     if (loc?.latitude == null || loc?.longitude == null) return;
 
-    print('📍 Starting live tracking for request $requestId');
     trackingController.startTracking(
       requestId,
       LatLng(loc!.latitude!, loc.longitude!),

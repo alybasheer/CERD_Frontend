@@ -14,6 +14,12 @@ class DioHelper {
       throw FetchDataExceptions('Endpoint not found: $url');
     }
 
+    // Validation-list responses (NestJS ValidationPipe) are technical and
+    // English-only; collapse them into one friendly, translated message.
+    if (response.data is Map && response.data['message'] is List) {
+      throw BadRequestException('Please check your input and try again.');
+    }
+
     final errorMsg =
         response.data is Map && response.data['message'] != null
             ? _messageToString(response.data['message'])

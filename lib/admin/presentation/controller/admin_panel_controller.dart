@@ -53,7 +53,7 @@ class AdminPanelController extends GetxController {
       applySearchFilter();
       return res;
     } catch (e) {
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
       rethrow;
     } finally {
       isLoading.value = false;

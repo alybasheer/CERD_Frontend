@@ -4,6 +4,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/empty_state.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
 import 'package:get/get.dart';
 
@@ -35,13 +36,11 @@ class AlertsScreen extends StatelessWidget {
         }
 
         if (controller.alerts.isEmpty) {
-          return Center(
-            child: Text(
-              'alerts.no_recent'.tr,
-              style: AppTextStyling.body_14M.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+          return EmptyStateView(
+            icon: Icons.notifications_off_rounded,
+            title: 'alerts.no_recent'.tr,
+            subtitle: 'alerts.no_recent_hint'.tr,
+            onRetry: controller.fetchAlerts,
           );
         }
 

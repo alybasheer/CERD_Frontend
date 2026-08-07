@@ -5,6 +5,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/empty_state.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
 import 'package:get/get.dart';
 
@@ -68,13 +69,11 @@ class CommunitiesScreen extends StatelessWidget {
       );
     }
     if (controller.communities.isEmpty) {
-      return Center(
-        child: Text(
-          'communities.no_requests'.tr,
-          style: AppTextStyling.body_14M.copyWith(
-            color: Get.theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+      return EmptyStateView(
+        icon: Icons.groups_rounded,
+        title: 'communities.no_requests'.tr,
+        subtitle: 'communities.no_requests_hint'.tr,
+        onRetry: controller.fetchCommunities,
       );
     }
 

@@ -50,7 +50,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   Future<void> fetchRequests() async {
     isLoading.value = true;
     try {
-      final position = await getCurrentLocation();
+      final position = await getQuickPosition();
       _resolveHeaderLocation(position.latitude, position.longitude);
       final list = await _repo.getOpenRequests(
         latitude: position.latitude,

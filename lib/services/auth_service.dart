@@ -61,7 +61,6 @@ class AuthService {
       _saveUserData(model);
       return {'success': true, 'data': model};
     } catch (e) {
-      print('Google Sign-In error: $e');
       return {'success': false, 'message': e.toString().replaceAll('Exception: ', '')};
     }
   }
@@ -106,8 +105,8 @@ class AuthService {
     try {
       await GoogleSignIn.instance.signOut();
       await _firebaseAuth.signOut();
-    } catch (e) {
-      print('Firebase/Google sign out error: $e');
+    } catch (_) {
+      // Best-effort sign out; local session is cleared by the caller.
     }
   }
 }

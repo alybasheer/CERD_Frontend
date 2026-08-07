@@ -12,8 +12,8 @@ const Map<String, String> enUS = {
   'common.save': 'Save',
   'common.saving': 'Saving',
   'common.got_it': 'Got it',
-  'common.rating': 'rating',
-  'common.ratings': 'ratings',
+  'common.retry': 'Try again',
+  'common.rating': 'rating',  'common.ratings': 'ratings',
   'common.active': 'active',
   'common.cancel': 'Cancel',
   'common.accept': 'Accept',
@@ -144,6 +144,7 @@ const Map<String, String> enUS = {
   'communities.subtitle': 'Volunteer groups and local tasks',
   'communities.filter_all': 'All',
   'communities.no_requests': 'No community requests',
+  'communities.no_requests_hint': 'There are no community requests here yet. Pull down or tap retry to check again.',
   'communities.create_title': 'Title',
   'communities.create_details': 'Details',
   'communities.create_category': 'Category',
@@ -156,6 +157,7 @@ const Map<String, String> enUS = {
   'alerts.title': 'Alerts',
   'alerts.subtitle': 'Live safety updates near you',
   'alerts.no_recent': 'No recent alerts',
+  'alerts.no_recent_hint': 'Safety alerts near you will appear here. Tap retry to check again.',
   'alerts.create_title': 'Title',
   'alerts.create_description': 'Description',
   'alerts.create_location': 'Location name',
@@ -187,6 +189,8 @@ const Map<String, String> enUS = {
 
   // ── Volunteer Verification ─────────────────────────────────────────
   'verification.title': 'Volunteer Verification',
+  'verification.approved_toast': 'Your application has been approved. Please log in again to refresh your volunteer access.',
+  'verification.rejected_toast': 'Your application was not approved. Please try again later or contact support.',
   'verification.subtitle': 'Submit your details for admin review',
   'verification.submit_btn': 'Submit for Verification',
   'verification.intro_title': 'Verify your identity',
@@ -278,15 +282,18 @@ const Map<String, String> enUS = {
   'profile.data_permissions': 'Data and permissions',
   'profile.data_permissions.intro':
       'Here is what the app stores on your device and on our servers, and what each permission is used for.',
-  'profile.session_access': 'Your login session',
+  'profile.session_access': 'Stay signed in',
   'profile.session_access.text':
-      'We keep you signed in so you don\u2019t have to log in every time. Signing out clears this session immediately, including the files stored on your device.',
-  'profile.location_use': 'Location sharing',
+      'Remain logged in so you don\u2019t have to sign in every time. Signing out clears your session.',
+  'profile.location_use': 'Location',
   'profile.location_use.text':
-      'Your location is only sent when you create a help request or press SOS, so nearby volunteers can find you. It is never shared publicly.',
-  'profile.preferences': 'App preferences',
+      'Allow the app to use your location so nearby requests and emergencies work correctly. It is never shared publicly.',
+  'profile.notifications': 'Notifications',
+  'profile.notifications.text':
+      'Receive SOS alerts and important updates while the app is open.',
+  'profile.preferences': 'App settings',
   'profile.preferences.text':
-      'Your language and appearance choices are saved on this device only. They can be changed at any time and are never sent anywhere.',
+      'Your language and appearance choices are saved on this device only.',
   'profile.sign_out': 'Sign out',
 
   // ── Admin info row labels ─────────────────────────────────────────
@@ -454,4 +461,11 @@ const Map<String, String> enUS = {
   'volunteer.home.default_name': 'Volunteer User',
   'volunteer.home.request_unavailable': 'Request is not available right now.',
   'volunteer.home.sos_intro': 'A nearby person needs urgent help. Respond now.',
+  'toast.server_error': 'Something went wrong. Please try again later.',
+  'toast.network_error': 'Network error. Please check your connection.',
+  'toast.timeout_error': 'The request took too long. Please try again.',
+  'toast.invalid_input': 'Please check your input and try again.',
+  'toast.session_expired': 'Your session has expired. Please sign in again.',
+  'toast.not_found': 'We could not find what you were looking for.',
+  'toast.conflict': 'This action conflicts with something that already exists. Please try something else.',
 };

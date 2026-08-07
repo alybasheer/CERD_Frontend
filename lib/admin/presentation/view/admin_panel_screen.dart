@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/admin/presentation/controller/admin_panel_controller.dart';
 import 'package:fyp_source_code/admin/presentation/view/widgets/popup_card.dart';
@@ -289,7 +290,9 @@ class _ApplicationCard extends StatelessWidget {
                 radius: 22,
                 backgroundColor: AppColors.safetyBlue.withValues(alpha: 0.10),
                 backgroundImage:
-                    profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                    profileImage.isNotEmpty
+                        ? CachedNetworkImageProvider(profileImage)
+                        : null,
                 child:
                     profileImage.isEmpty
                         ? Text(
@@ -429,14 +432,6 @@ Color _statusColor(String status) {
     default:
       return AppColors.amberOrange;
   }
-}
-
-String _titleCase(String value) {
-  final clean = value.trim();
-  if (clean.isEmpty) {
-    return '';
-  }
-  return clean[0].toUpperCase() + clean.substring(1).toLowerCase();
 }
 
 String _getStatusLabel(String status) {

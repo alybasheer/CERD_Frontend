@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/localization/locale_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
@@ -319,10 +320,11 @@ class ProfilePreferencesSection extends StatelessWidget {
         ),
         child: SafeArea(
           top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(
@@ -363,6 +365,7 @@ class ProfilePreferencesSection extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+            ),
           ),
         ),
       ),
@@ -544,6 +547,11 @@ class ProfilePolicySection extends StatelessWidget {
                       icon: Icons.location_on_rounded,
                       title: 'profile.location_use'.tr,
                       text: 'profile.location_use.text'.tr,
+                    ),
+                    _PolicyLine(
+                      icon: Icons.notifications_rounded,
+                      title: 'profile.notifications'.tr,
+                      text: 'profile.notifications.text'.tr,
                     ),
                     _PolicyLine(
                       icon: Icons.palette_rounded,
@@ -950,7 +958,7 @@ ImageProvider? _resolveAvatar(String? imageUrl) {
   }
   if (value.startsWith('http')) {
     final token = StorageHelper().readData('token')?.toString().trim();
-    return NetworkImage(
+    return CachedNetworkImageProvider(
       value,
       headers:
           token == null || token.isEmpty

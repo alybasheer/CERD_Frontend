@@ -29,7 +29,7 @@ class SplashController extends GetxController {
 
   Future<void> _checkUserStatusAndNavigate() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 2600));
+      await Future.delayed(const Duration(milliseconds: 900));
 
       _checkForAppUpdate();
 
@@ -99,10 +99,12 @@ class SplashController extends GetxController {
 
   Future<void> _fetchAndNavigateBasedOnStatus() async {
     try {
-      final response = await DioHelper().get(
-        url: ApiNames.getvolunteerStats,
-        isauthorize: true,
-      );
+      final response = await DioHelper()
+          .get(
+            url: ApiNames.getvolunteerStats,
+            isauthorize: true,
+          )
+          .timeout(const Duration(seconds: 8));
 
       var verificationStatus = '';
       final snapshot = _VolunteerStatusSnapshot.fromResponse(response);
@@ -152,10 +154,12 @@ class SplashController extends GetxController {
 
   Future<_VolunteerStatusSnapshot> _fetchVolunteerStatus() async {
     try {
-      final response = await DioHelper().get(
-        url: ApiNames.getvolunteerStats,
-        isauthorize: true,
-      );
+      final response = await DioHelper()
+          .get(
+            url: ApiNames.getvolunteerStats,
+            isauthorize: true,
+          )
+          .timeout(const Duration(seconds: 8));
       return _VolunteerStatusSnapshot.fromResponse(response);
     } catch (_) {
       return const _VolunteerStatusSnapshot(status: '', hasApplication: false);

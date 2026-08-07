@@ -2,48 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fyp_source_code/network/friendly_error.dart';
 import 'package:get/get.dart';
-
 /// Professional generic toast messages for common scenarios
 class ToastMessages {
-  // ============ AUTH MESSAGES ============
-  static const String emailNotFound =
-      'Email address not found. Create an account or try another email.';
-  static const String emailExists =
-      'Email already registered. Please log in or use a different email.';
-  static const String passwordIncorrect =
-      'Password is incorrect. Please try again.';
-  static const String loginSuccess = 'Login successful. Welcome back!';
-  static const String registerSuccess =
-      'Account created successfully. Welcome to our community!';
-  static const String logoutSuccess = 'Logged out successfully.';
-
-  // ============ VALIDATION MESSAGES ============
-  static const String formError =
-      'Please fill in all required fields correctly.';
-  static const String validationError =
-      'Please check your input and try again.';
-
   // ============ SERVER MESSAGES ============
-  static const String serverError =
-      'Something went wrong. Please try again later.';
-  static const String networkError =
-      'Network error. Please check your connection.';
-  static const String timeoutError = 'Request timeout. Please try again.';
-  static const String noInternet =
-      'No internet connection. Please check your network.';
-  static const String sessionExpired =
-      'Your session has expired. Please sign in again.';
-  static const String notFound =
-      'We could not find what you were looking for. Please try again.';
-  static const String conflict =
-      'This action conflicts with something that already exists. Please try something else.';
-
-  // ============ GENERAL MESSAGES ============
-  static const String success = 'Operation completed successfully.';
-  static const String loading = 'Loading...';
-  static const String saved = 'Saved successfully.';
-  static const String deleted = 'Deleted successfully.';
-  static const String updated = 'Updated successfully.';
+  static String get serverError => 'toast.server_error'.tr;
+  static String get networkError => 'toast.network_error'.tr;
+  static String get timeoutError => 'toast.timeout_error'.tr;
+  static String get invalidInput => 'toast.invalid_input'.tr;
+  static String get sessionExpired => 'toast.session_expired'.tr;
+  static String get notFound => 'toast.not_found'.tr;
+  static String get conflict => 'toast.conflict'.tr;
 }
 
 enum _ToastType { success, error, warning, info }

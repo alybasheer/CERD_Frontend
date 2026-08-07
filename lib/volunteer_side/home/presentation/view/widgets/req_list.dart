@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
@@ -45,7 +46,7 @@ ImageProvider? _resolveImage(String? imageUrl) {
     return null;
   }
   if (imageUrl.startsWith('http')) {
-    return NetworkImage(imageUrl, headers: _authHeaders());
+    return CachedNetworkImageProvider(imageUrl, headers: _authHeaders());
   }
   if (imageUrl.startsWith('assets/')) {
     return AssetImage(imageUrl);

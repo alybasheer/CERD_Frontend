@@ -236,8 +236,7 @@ class VolunteerVerificationController extends GetxController {
         );
       });
     } catch (e) {
-      debugPrint('Verification error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isSubmitting.value = false;
     }

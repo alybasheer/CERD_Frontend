@@ -34,6 +34,15 @@ Future<Position> getCurrentLocation({bool useCacheFirst = false}) async {
       accuracy: LocationAccuracy.best,
       forceLocationManager: true,
     ),
+  ).timeout(
+    const Duration(seconds: 8),
+    onTimeout: () {
+      final cached = _cachedKnownPosition;
+      if (cached != null) {
+        return cached;
+      }
+      throw 'Unable to determine your location.';
+    },
   );
   _rememberPosition(current);
   return current;
