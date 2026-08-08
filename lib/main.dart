@@ -64,6 +64,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   /// reconnect (with the current token) if the socket dropped, so requests
   /// are received instantly without restarting the app.
   void _ensureSocketConnected() {
+    print('[SOCKET] app resumed - checking connection');
     if (Get.isRegistered<ChatProvider>()) {
       Get.find<ChatProvider>().ensureConnected();
     }

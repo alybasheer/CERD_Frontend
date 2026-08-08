@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fyp_source_code/chat/data/models/message_model.dart';
 import 'package:fyp_source_code/services/api_names.dart';
+import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService {
@@ -41,12 +42,12 @@ class SocketService {
   void connect(String token) {
     try {
       if (_isInitialized && _socket.connected && _connectedToken == token) {
-        print('ℹ️ Socket already connected');
+        print('[SOCKET] already connected (same token) - no-op');
         return;
       }
 
       if (_isInitialized && _connectedToken == token) {
-        print('🔌 Socket exists but disconnected - reconnecting');
+        print('[SOCKET] reconnecting: socket exists but disconnected (same token)');
         _socket.connect();
         return;
       }
@@ -54,7 +55,7 @@ class SocketService {
       if (_isInitialized) {
         // Token changed: drop the stale socket so the server unregisters
         // the old user before we register the new one.
-        print('🔄 Token changed - replacing socket connection');
+        print('[SOCKET] token changed - tearing down stale socket');
         try {
           _socket.dispose();
         } catch (_) {}
@@ -62,7 +63,7 @@ class SocketService {
         _connectedToken = null;
       }
 
-      print('🔌 Connecting to WebSocket...');
+      print('[SOCKET] initializing socket: ${ApiNames.socketBaseUrl}');
 
       final socketUrl = ApiNames.socketBaseUrl;
 
@@ -93,27 +94,27 @@ class SocketService {
   /// 📡 Listeners
   void _setupListeners() {
     _socket.onConnect((_) {
-      print('✅ WebSocket connected');
+      print('[SOCKET] connected - socket id: ${_socket.id}');
       _connectionController.add(true);
     });
 
     _socket.onDisconnect((_) {
-      print('❌ WebSocket disconnected');
+      print('[SOCKET] disconnected');
       _connectionController.add(false);
     });
 
     _socket.onConnectError((data) {
-      print('❌ Connection error: $data');
+      print('[SOCKET] connection error: $data');
       _connectionController.add(false);
     });
 
     _socket.onError((data) {
-      print('❌ Socket error: $data');
+      print('[SOCKET] socket error: $data');
     });
 
     // Reconnect event - re-setup listeners when reconnecting
     _socket.onReconnect((_) {
-      print('🔄 WebSocket reconnected - re-establishing listeners...');
+      print('[SOCKET] reconnected - re-registering listeners');
       _connectionController.add(true);
     });
 
@@ -158,6 +159,15 @@ class SocketService {
     _listenToFlowEvent('new_alert');
     _listenToFlowEvent('sos_escalated');
 
+    // ✔ Server-side registration acknowledgement (chat.gateway)
+    _socket.on('connection_success', (data) {
+      final userId = data is Map ? data['userId'] : null;
+      final role = StorageHelper().readData('role');
+      print(
+        '[SOCKET] register event received: connection_success (userId: $userId, role: $role)',
+      );
+    });
+
     _socket.on('volunteer_location', (data) {
       try {
         _volunteerLocationController.add(Map<String, dynamic>.from(data));
@@ -178,9 +188,21 @@ class SocketService {
   void _listenToFlowEvent(String eventName) {
     _socket.on(eventName, (data) {
       try {
+        final payload =
+            data is Map ? Map<String, dynamic>.from(data) : null;
+        if (eventName == 'new_help_request') {
+          final isSos =
+              payload != null &&
+              (payload['isSos'] == true || payload['escalated'] == true);
+          print(
+            '[SOCKET] notification received: event=$eventName id=${payload?['_id']} isSos=$isSos',
+          );
+        } else {
+          print('[SOCKET] notification received: event=$eventName');
+        }
         _flowEventController.add({
           'event': eventName,
-          'data': data is Map ? Map<String, dynamic>.from(data) : data,
+          'data': payload ?? data,
         });
       } catch (e) {
         print('Error parsing $eventName: $e');
@@ -248,14 +270,14 @@ class SocketService {
   /// 🔌 Disconnect gracefully (keeps streams open for reconnection)
   void disconnect() {
     if (!_isInitialized) return;
-    print('🔌 Disconnecting gracefully...');
+    print('[SOCKET] disconnecting gracefully');
     _socket.disconnect();
     // Don't close controllers - keep them open for reconnection
   }
 
   /// 🧹 Dispose streams (hard close)
   void dispose() {
-    print('🧹 Disposing SocketService...');
+    print('[SOCKET] disposing SocketService');
     _messageController.close();
     _typingController.close();
     _connectionController.close();
