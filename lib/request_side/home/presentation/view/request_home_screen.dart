@@ -428,10 +428,68 @@ class _Snooze {
   const _Snooze(this.label, this.duration);
 }
 
-class _TrackingMapSection extends StatelessWidget {
+class _TrackingMapSection extends StatefulWidget {
   final TrackingController controller;
 
   const _TrackingMapSection({required this.controller});
+
+  @override
+  State<_TrackingMapSection> createState() => _TrackingMapSectionState();
+}
+
+class _TrackingMapSectionState extends State<_TrackingMapSection> {
+  final MapController _mapController = MapController();
+  String? _lastCameraKey;
+
+  TrackingController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    ever(controller.volunteerPosition, _onPositionChanged);
+    ever(controller.routePoints, (_) => _fitMap());
+  }
+
+  void _onPositionChanged(LatLng? pos) {
+    if (pos != null) _fitMap();
+  }
+
+  void _fitMap() {
+    final vol = controller.volunteerPosition.value;
+    final dest = controller.routePoints.isNotEmpty
+        ? controller.routePoints.last
+        : null;
+    final all = [vol, dest].whereType<LatLng>().toList();
+    if (all.length < 2) {
+      if (all.isNotEmpty) {
+        try {
+          _mapController.move(all.first, 15);
+        } catch (_) {
+          _lastCameraKey = null;
+        }
+      }
+      return;
+    }
+    final key = all
+        .map(
+          (p) =>
+              '${p.latitude.toStringAsFixed(4)},${p.longitude.toStringAsFixed(4)}',
+        )
+        .join(':');
+    if (key == _lastCameraKey) return;
+    _lastCameraKey = key;
+    try {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: all,
+          padding: const EdgeInsets.fromLTRB(48, 48, 48, 96),
+          maxZoom: 17,
+        ),
+      );
+    } catch (_) {
+      _lastCameraKey = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -537,6 +595,7 @@ class _TrackingMapSection extends StatelessWidget {
             ),
             Expanded(
               child: FlutterMap(
+                mapController: _mapController,
                 options: MapOptions(
                   initialCenter:
                       volPos ?? destination ?? const LatLng(31.52, 74.35),

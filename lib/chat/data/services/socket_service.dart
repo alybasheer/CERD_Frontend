@@ -84,8 +84,11 @@ class SocketService {
 
       _connectedToken = token;
       _isInitialized = true;
-      _socket.connect();
+      // Attach all socket listeners BEFORE initiating the connection so no
+      // server-pushed event (tracking, SOS, chat) can arrive before the
+      // corresponding Dart handler is registered.
       _setupListeners();
+      _socket.connect();
     } catch (e) {
       print('❌ Error connecting to WebSocket: $e');
     }
