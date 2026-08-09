@@ -25,6 +25,10 @@ class SocketService {
   static const int _flowEventBufferMax = 20;
   final List<Map<String, dynamic>> _flowEventBuffer = [];
 
+  /// Replay buffer for volunteer location events.
+  static const int _volLocationBufferMax = 10;
+  final List<Map<String, dynamic>> _volLocationBuffer = [];
+
   Stream<Message> get messageStream => _messageController.stream;
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
@@ -38,6 +42,10 @@ class SocketService {
   /// Returns buffered flow events so callers can catch up after subscribing.
   List<Map<String, dynamic>> getBufferedFlowEvents() =>
       List.unmodifiable(_flowEventBuffer);
+
+  /// Returns buffered volunteer location events for replay.
+  List<Map<String, dynamic>> getBufferedVolLocations() =>
+      List.unmodifiable(_volLocationBuffer);
 
   bool get isConnected => _isInitialized && _socket.connected;
 
@@ -189,7 +197,12 @@ class SocketService {
 
     _socket.on('volunteer_location', (data) {
       try {
-        _volunteerLocationController.add(Map<String, dynamic>.from(data));
+        final event = Map<String, dynamic>.from(data);
+        _volunteerLocationController.add(event);
+        _volLocationBuffer.add(event);
+        if (_volLocationBuffer.length > _volLocationBufferMax) {
+          _volLocationBuffer.removeAt(0);
+        }
       } catch (e) {
         print('Error parsing volunteer_location: $e');
       }
@@ -205,6 +218,7 @@ class SocketService {
   }
 
   void _listenToFlowEvent(String eventName) {
+    _socket.off(eventName);
     _socket.on(eventName, (data) {
       try {
         final payload =

@@ -36,6 +36,26 @@ class TrackingController extends GetxController {
     return null;
   }
 
+  void _processLocationEvent(Map<String, dynamic> data, String requestId) {
+    if (data['requestId']?.toString() != requestId) return;
+    final lat = _readDouble(data['latitude']);
+    final lng = _readDouble(data['longitude']);
+    if (lat == null || lng == null) return;
+
+    final pos = LatLng(lat, lng);
+
+    final destination = this.destination.value;
+    if (destination == null) return;
+
+    if (routePoints.length < 2) {
+      volunteerPosition.value = pos;
+      _fetchFullRoute(pos, destination);
+    } else {
+      _updateRouteProgress(pos);
+    }
+    _updateRemainingDistance(pos);
+  }
+
   @override
   void onClose() {
     _locationSub?.cancel();
@@ -64,26 +84,17 @@ class TrackingController extends GetxController {
 
     _locationSub?.cancel();
     _locationSub = provider.volunteerLocationStream.listen((data) {
-      if (data['requestId']?.toString() != requestId) return;
-      final lat = _readDouble(data['latitude']);
-      final lng = _readDouble(data['longitude']);
-      if (lat == null || lng == null) return;
-
-      final pos = LatLng(lat, lng);
-
-      final destination = this.destination.value;
-      if (destination == null) return;
-
-      if (routePoints.length < 2) {
-        // First location - fetch the full route from the volunteer's position.
-        // Before the road geometry exists the raw GPS fix is the best marker.
-        volunteerPosition.value = pos;
-        _fetchFullRoute(pos, destination);
-      } else {
-        _updateRouteProgress(pos);
-      }
-      _updateRemainingDistance(pos);
+      _processLocationEvent(data, requestId);
     });
+
+    // Replay the most recent buffered location for this request
+    // so we don't miss events that arrived before the subscription.
+    final buffered = provider.getBufferedVolLocations();
+    for (final event in buffered) {
+      if (event['requestId']?.toString() == requestId) {
+        _processLocationEvent(event, requestId);
+      }
+    }
 
     _statusSub?.cancel();
     _statusSub = provider.trackingStatusStream.listen((data) {

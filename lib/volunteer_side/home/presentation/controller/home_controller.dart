@@ -214,17 +214,17 @@ class HomeController extends GetxController with WidgetsBindingObserver {
           SystemSound.play(SystemSoundType.alert);
           _showSosAlertDialog(Map<String, dynamic>.from(data));
         }
-        fetchRequests();
+        Future.microtask(() => fetchRequests());
         return;
       }
       if (eventName == 'help_request_cancelled') {
-        fetchRequests();
+        Future.microtask(() => fetchRequests());
         return;
       }
       if (eventName == 'help_request_accepted' ||
           eventName == 'help_request_resolved' ||
           eventName == 'new_alert') {
-        fetchRequests();
+        Future.microtask(() => fetchRequests());
         if (eventName == 'help_request_accepted' ||
             eventName == 'help_request_resolved') {
           fetchVolunteerStats();
@@ -246,7 +246,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
               name == 'help_request_resolved' ||
               name == 'help_request_cancelled' ||
               name == 'new_alert') {
-            fetchRequests();
+            Future.microtask(() => fetchRequests());
             break;
           }
         }

@@ -30,6 +30,9 @@ class ChatProvider extends GetxController {
   List<Map<String, dynamic>> getBufferedFlowEvents() =>
       _socketService.getBufferedFlowEvents();
 
+  List<Map<String, dynamic>> getBufferedVolLocations() =>
+      _socketService.getBufferedVolLocations();
+
   Stream<Map<String, dynamic>> get volunteerLocationStream =>
       _socketService.volunteerLocationStream;
 

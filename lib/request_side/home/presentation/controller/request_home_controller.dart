@@ -126,7 +126,7 @@ class RequestHomeController extends GetxController
         longitude: position.longitude,
       );
       activeRequests.assignAll(active.where(_isRealActiveRequest));
-      _reconcileAcceptedTracking();
+      Future.microtask(() => _reconcileAcceptedTracking());
       unawaited(_resolveRequestLocations(activeRequests));
       nearbyVolunteers.assignAll(volunteers);
     } catch (e) {
@@ -560,7 +560,7 @@ class RequestHomeController extends GetxController
               name == 'help_request_cancelled' ||
               name == 'sos_escalated' ||
               name == 'help_request_resolved') {
-            refreshDashboard();
+            Future.microtask(() => refreshDashboard());
             break;
           }
         }
