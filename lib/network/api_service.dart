@@ -9,6 +9,12 @@ class DioHelper {
   Dio dio = getDio();
   static const _retryDelay = Duration(seconds: 2);
 
+  /// Set to true while the login flow is completing (token saved but
+  /// navigation still in progress).  Prevents the 401 handler from
+  /// wiping the fresh session when a post-login API call (e.g.
+  /// volunteer status check) fails with a stale error.
+  static bool loginInProgress = false;
+
   void _handleErrorResponse(String url, Response response) {
     if (response.statusCode == 404) {
       throw FetchDataExceptions('Endpoint not found: $url');
@@ -37,6 +43,11 @@ class DioHelper {
       // email or password") instead of "Session expired".
       if (Get.currentRoute == RouteNames.login) {
         throw BadRequestException(errorMsg);
+      }
+      // During post-login transition (requestee status check running after
+      // token was just saved), don't destroy the fresh session.
+      if (loginInProgress) {
+        throw UnauthorizedException(errorMsg);
       }
       // During app startup, silently redirect to login without a toast.
       final isStartup = Get.currentRoute == RouteNames.splash ||

@@ -191,8 +191,15 @@ class AuthController extends GetxController {
       ToastHelper.showSuccess('auth.success.login'.tr);
 
       // Navigate based on the backend account role, not the chosen app mode.
+      // Mark login as in-progress so the 401 handler won't wipe the fresh
+      // session if a post-login API call (requestee status check) fails.
+      DioHelper.loginInProgress = true;
       Future.delayed(Duration(milliseconds: 500), () async {
-        await _navigateAfterLogin(resp.user!);
+        try {
+          await _navigateAfterLogin(resp.user!);
+        } finally {
+          DioHelper.loginInProgress = false;
+        }
       });
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -292,8 +299,13 @@ class AuthController extends GetxController {
       if (result['success'] == true) {
         final model = result['data'] as SignupModel;
         ToastHelper.showSuccess('auth.success.google'.tr);
+        DioHelper.loginInProgress = true;
         Future.delayed(const Duration(milliseconds: 500), () async {
-          await _navigateAfterLogin(model.user!);
+          try {
+            await _navigateAfterLogin(model.user!);
+          } finally {
+            DioHelper.loginInProgress = false;
+          }
         });
       } else {
         ToastHelper.showError(
