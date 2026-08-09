@@ -32,16 +32,18 @@ class DioHelper {
     if (response.statusCode == 400) {
       throw BadRequestException(errorMsg);
     } else if (response.statusCode == 401) {
-      // Don't show the "Session expired" toast during app startup – just
-      // silently redirect to login.  The toast is only shown when the 401
-      // happens during an active session (e.g. after the user has been
-      // using the app for a while).
+      // If we're on the login screen, this is a wrong-credentials error —
+      // NOT a session expiry.  Show the backend's actual message ("Invalid
+      // email or password") instead of "Session expired".
+      if (Get.currentRoute == RouteNames.login) {
+        throw BadRequestException(errorMsg);
+      }
+      // During app startup, silently redirect to login without a toast.
       final isStartup = Get.currentRoute == RouteNames.splash ||
           Get.currentRoute.isEmpty;
       if (!isStartup) {
         _handleUnauthorizedSession();
       } else {
-        // Silent redirect: clear session and go to login without a toast.
         StorageHelper().clearSessionData();
         Future.microtask(() => Get.offAllNamed(RouteNames.login));
       }
