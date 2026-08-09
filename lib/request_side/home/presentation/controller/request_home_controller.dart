@@ -552,19 +552,21 @@ class RequestHomeController extends GetxController
 
     // On reconnect: process buffered events and refresh dashboard
     _connectionSubscription = provider.connectionStream.listen((connected) {
-      if (connected) {
-        final buffered = provider.getBufferedFlowEvents();
-        for (final event in buffered) {
-          final name = event['event']?.toString();
-          if (name == 'help_request_accepted' ||
-              name == 'help_request_cancelled' ||
-              name == 'sos_escalated' ||
-              name == 'help_request_resolved') {
-            Future.microtask(() => refreshDashboard());
-            break;
+      Future.microtask(() {
+        if (connected) {
+          final buffered = provider.getBufferedFlowEvents();
+          for (final event in buffered) {
+            final name = event['event']?.toString();
+            if (name == 'help_request_accepted' ||
+                name == 'help_request_cancelled' ||
+                name == 'sos_escalated' ||
+                name == 'help_request_resolved') {
+              refreshDashboard();
+              break;
+            }
           }
         }
-      }
+      });
     });
   }
 

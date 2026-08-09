@@ -203,55 +203,60 @@ class HomeController extends GetxController with WidgetsBindingObserver {
             : Get.put(ChatProvider());
 
     _flowSubscription = provider.flowEventStream.listen((event) {
-      final eventName = event['event']?.toString();
-      if (eventName == 'new_help_request') {
-        final data = event['data'];
-        final isSos =
-            data is Map &&
-            (data['isSos'] == true || data['escalated'] == true);
-        if (isSos) {
-          Vibration.vibrate(pattern: [0, 400, 200, 400, 200, 800]);
-          SystemSound.play(SystemSoundType.alert);
-          _showSosAlertDialog(Map<String, dynamic>.from(data));
+      // Defer ALL reactive mutations to the next microtask to prevent
+      // setState-during-build when a flow event arrives during a build.
+      Future.microtask(() {
+        final eventName = event['event']?.toString();
+        if (eventName == 'new_help_request') {
+          final data = event['data'];
+          final isSos =
+              data is Map &&
+              (data['isSos'] == true || data['escalated'] == true);
+          if (isSos) {
+            Vibration.vibrate(pattern: [0, 400, 200, 400, 200, 800]);
+            SystemSound.play(SystemSoundType.alert);
+            _showSosAlertDialog(Map<String, dynamic>.from(data));
+          }
+          fetchRequests();
+          return;
         }
-        Future.microtask(() => fetchRequests());
-        return;
-      }
-      if (eventName == 'help_request_cancelled') {
-        Future.microtask(() => fetchRequests());
-        return;
-      }
-      if (eventName == 'help_request_accepted' ||
-          eventName == 'help_request_resolved' ||
-          eventName == 'new_alert') {
-        Future.microtask(() => fetchRequests());
+        if (eventName == 'help_request_cancelled') {
+          fetchRequests();
+          return;
+        }
         if (eventName == 'help_request_accepted' ||
-            eventName == 'help_request_resolved') {
-          fetchVolunteerStats();
+            eventName == 'help_request_resolved' ||
+            eventName == 'new_alert') {
+          fetchRequests();
+          if (eventName == 'help_request_accepted' ||
+              eventName == 'help_request_resolved') {
+            fetchVolunteerStats();
+          }
         }
-      }
+      });
     });
 
     // Socket came back (first connect or reconnect): recover any request/SOS
     // broadcast that was missed while the channel was down. Process buffered
     // events first, then refresh via HTTP.
     _connectionSubscription = provider.connectionStream.listen((connected) {
-      if (connected) {
-        // Process events that arrived during the disconnect gap
-        final buffered = provider.getBufferedFlowEvents();
-        for (final event in buffered) {
-          final name = event['event']?.toString();
-          if (name == 'new_help_request' ||
-              name == 'help_request_accepted' ||
-              name == 'help_request_resolved' ||
-              name == 'help_request_cancelled' ||
-              name == 'new_alert') {
-            Future.microtask(() => fetchRequests());
-            break;
+      Future.microtask(() {
+        if (connected) {
+          final buffered = provider.getBufferedFlowEvents();
+          for (final event in buffered) {
+            final name = event['event']?.toString();
+            if (name == 'new_help_request' ||
+                name == 'help_request_accepted' ||
+                name == 'help_request_resolved' ||
+                name == 'help_request_cancelled' ||
+                name == 'new_alert') {
+              fetchRequests();
+              break;
+            }
           }
+          _refreshLocationOnResume();
         }
-        _refreshLocationOnResume();
-      }
+      });
     });
   }
 
