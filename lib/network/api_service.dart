@@ -45,9 +45,10 @@ class DioHelper {
         throw BadRequestException(errorMsg);
       }
       // During post-login transition (requestee status check running after
-      // token was just saved), don't destroy the fresh session.
+      // token was just saved), don't destroy the fresh session and don't
+      // show "Session expired" — show the actual backend error instead.
       if (loginInProgress) {
-        throw UnauthorizedException(errorMsg);
+        throw FetchDataExceptions(errorMsg);
       }
       // During app startup, silently redirect to login without a toast.
       final isStartup = Get.currentRoute == RouteNames.splash ||

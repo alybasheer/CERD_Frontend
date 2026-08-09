@@ -195,11 +195,13 @@ class AuthController extends GetxController {
       // session if a post-login API call (requestee status check) fails.
       DioHelper.loginInProgress = true;
       Future.delayed(Duration(milliseconds: 500), () async {
-        try {
-          await _navigateAfterLogin(resp.user!);
-        } finally {
+        await _navigateAfterLogin(resp.user!);
+        // Reset the flag only AFTER the first frame renders, so any
+        // post-login API calls (refreshDashboard) that return 401 won't
+        // trigger "Session expired" toast.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           DioHelper.loginInProgress = false;
-        }
+        });
       });
     } catch (e) {
       ToastHelper.showErrorMessage(e);
@@ -301,11 +303,10 @@ class AuthController extends GetxController {
         ToastHelper.showSuccess('auth.success.google'.tr);
         DioHelper.loginInProgress = true;
         Future.delayed(const Duration(milliseconds: 500), () async {
-          try {
-            await _navigateAfterLogin(model.user!);
-          } finally {
+          await _navigateAfterLogin(model.user!);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             DioHelper.loginInProgress = false;
-          }
+          });
         });
       } else {
         ToastHelper.showError(
