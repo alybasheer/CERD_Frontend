@@ -44,6 +44,7 @@ class RequestHomeController extends GetxController
   final ratingCommentController = TextEditingController();
 
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
   final Set<String> _ratingPrompted = {};
 
   // ── Sender-side SOS alerting ────────────────────────────────────────
@@ -548,6 +549,23 @@ class RequestHomeController extends GetxController
         }
       }
     });
+
+    // On reconnect: process buffered events and refresh dashboard
+    _connectionSubscription = provider.connectionStream.listen((connected) {
+      if (connected) {
+        final buffered = provider.getBufferedFlowEvents();
+        for (final event in buffered) {
+          final name = event['event']?.toString();
+          if (name == 'help_request_accepted' ||
+              name == 'help_request_cancelled' ||
+              name == 'sos_escalated' ||
+              name == 'help_request_resolved') {
+            refreshDashboard();
+            break;
+          }
+        }
+      }
+    });
   }
 
   String? _extractRequestId(dynamic data) {
@@ -742,6 +760,7 @@ class RequestHomeController extends GetxController
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
     _flowSubscription?.cancel();
+    _connectionSubscription?.cancel();
     _sosReminderTimer?.cancel();
     _snoozeResumeTimer?.cancel();
     ratingCommentController.dispose();

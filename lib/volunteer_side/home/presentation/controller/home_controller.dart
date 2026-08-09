@@ -233,10 +233,23 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     });
 
     // Socket came back (first connect or reconnect): recover any request/SOS
-    // broadcast that was missed while the channel was down. The location
-    // refresh also keeps this volunteer inside the server-side geo query.
+    // broadcast that was missed while the channel was down. Process buffered
+    // events first, then refresh via HTTP.
     _connectionSubscription = provider.connectionStream.listen((connected) {
       if (connected) {
+        // Process events that arrived during the disconnect gap
+        final buffered = provider.getBufferedFlowEvents();
+        for (final event in buffered) {
+          final name = event['event']?.toString();
+          if (name == 'new_help_request' ||
+              name == 'help_request_accepted' ||
+              name == 'help_request_resolved' ||
+              name == 'help_request_cancelled' ||
+              name == 'new_alert') {
+            fetchRequests();
+            break;
+          }
+        }
         _refreshLocationOnResume();
       }
     });

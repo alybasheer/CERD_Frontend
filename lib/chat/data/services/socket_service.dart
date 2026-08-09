@@ -20,6 +20,11 @@ class SocketService {
   final _trackingStatusController =
       StreamController<Map<String, dynamic>>.broadcast();
 
+  /// Replay buffer: last N flow events so new subscribers don't miss
+  /// events that arrived between socket connect and listener attach.
+  static const int _flowEventBufferMax = 20;
+  final List<Map<String, dynamic>> _flowEventBuffer = [];
+
   Stream<Message> get messageStream => _messageController.stream;
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
@@ -29,6 +34,10 @@ class SocketService {
       _volunteerLocationController.stream;
   Stream<Map<String, dynamic>> get trackingStatusStream =>
       _trackingStatusController.stream;
+
+  /// Returns buffered flow events so callers can catch up after subscribing.
+  List<Map<String, dynamic>> getBufferedFlowEvents() =>
+      List.unmodifiable(_flowEventBuffer);
 
   bool get isConnected => _isInitialized && _socket.connected;
 
@@ -115,9 +124,16 @@ class SocketService {
       print('[SOCKET] socket error: $data');
     });
 
-    // Reconnect event - re-setup listeners when reconnecting
+    // Reconnect event - re-register flow listeners so the server
+    // re-adds this socket to its connectedUsers map (which is wiped
+    // on disconnect). Without this, live requests are silently dropped.
     _socket.onReconnect((_) {
-      print('[SOCKET] reconnected - re-registering listeners');
+      print('[SOCKET] reconnected - re-registering flow listeners');
+      _listenToFlowEvent('new_help_request');
+      _listenToFlowEvent('help_request_accepted');
+      _listenToFlowEvent('help_request_resolved');
+      _listenToFlowEvent('new_alert');
+      _listenToFlowEvent('sos_escalated');
       _connectionController.add(true);
     });
 
@@ -203,10 +219,16 @@ class SocketService {
         } else {
           print('[SOCKET] notification received: event=$eventName');
         }
-        _flowEventController.add({
+        final event = {
           'event': eventName,
           'data': payload ?? data,
-        });
+        };
+        _flowEventController.add(event);
+        // Buffer for replay so new subscribers don't miss early events
+        _flowEventBuffer.add(event);
+        if (_flowEventBuffer.length > _flowEventBufferMax) {
+          _flowEventBuffer.removeAt(0);
+        }
       } catch (e) {
         print('Error parsing $eventName: $e');
       }

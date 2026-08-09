@@ -136,7 +136,7 @@ class AuthController extends GetxController {
       // Create login request
       loginModel.user = User(
         email: emailController.text.trim(),
-        password: passController.text,
+        password: passController.text.trim(),
       );
 
       // Call API
@@ -218,7 +218,7 @@ class AuthController extends GetxController {
     }
 
     // Validate confirm password matches
-    if (passController.text != confirmPassController.text) {
+    if (passController.text.trim() != confirmPassController.text.trim()) {
       ToastHelper.showError('auth.error.passwords_mismatch'.tr);
       return;
     }
@@ -230,7 +230,7 @@ class AuthController extends GetxController {
       signupModel.user = User(
         username: usernameController.text.trim(),
         email: emailController.text.trim(),
-        password: passController.text,
+        password: passController.text.trim(),
       );
 
       // Call API
