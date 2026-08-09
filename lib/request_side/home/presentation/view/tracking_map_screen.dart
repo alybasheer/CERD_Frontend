@@ -28,6 +28,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       _ctrl = Get.find<TrackingController>();
       ever(_ctrl!.volunteerPosition, _onPositionChanged);
       ever(_ctrl!.routePoints, (_) => _fitMap());
+      ever(_ctrl!.destination, (_) => _fitMap());
     }
   }
 
@@ -72,7 +73,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     final ctrl = _ctrl;
     if (ctrl == null) return;
     final vol = ctrl.volunteerPosition.value;
-    final dest = ctrl.routePoints.isNotEmpty ? ctrl.routePoints.last : null;
+    final dest = ctrl.destination.value;
     final all = [vol, dest].whereType<LatLng>().toList();
     if (all.length < 2) {
       if (all.isNotEmpty) {
@@ -144,7 +145,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       ),
       body: Obx(() {
         final volPos = ctrl.volunteerPosition.value;
-        final dest = ctrl.routePoints.isNotEmpty ? ctrl.routePoints.last : null;
+        final dest = ctrl.destination.value;
         final route = ctrl.routePoints;
         final traveled = ctrl.traveledPoints;
         final dist = ctrl.remainingDistanceKm.value;
@@ -157,7 +158,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: volPos ?? dest ?? const LatLng(31.52, 74.35),
-                initialZoom: 14,
+                initialZoom: volPos != null ? 16 : 14,
                 minZoom: 1,
                 maxZoom: 19,
               ),

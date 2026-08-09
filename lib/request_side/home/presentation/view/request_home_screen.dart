@@ -449,6 +449,7 @@ class _TrackingMapSectionState extends State<_TrackingMapSection> {
     super.initState();
     ever(controller.volunteerPosition, _onPositionChanged);
     ever(controller.routePoints, (_) => _fitMap());
+    ever(controller.destination, (_) => _fitMap());
   }
 
   void _onPositionChanged(LatLng? pos) {
@@ -488,9 +489,7 @@ class _TrackingMapSectionState extends State<_TrackingMapSection> {
 
   void _fitMap() {
     final vol = controller.volunteerPosition.value;
-    final dest = controller.routePoints.isNotEmpty
-        ? controller.routePoints.last
-        : null;
+    final dest = controller.destination.value;
     final all = [vol, dest].whereType<LatLng>().toList();
     if (all.length < 2) {
       if (all.isNotEmpty) {
@@ -529,10 +528,7 @@ class _TrackingMapSectionState extends State<_TrackingMapSection> {
       if (!controller.isTracking.value) return const SizedBox.shrink();
 
       final volPos = controller.volunteerPosition.value;
-      final destination =
-          controller.routePoints.isNotEmpty
-              ? controller.routePoints.last
-              : null;
+      final destination = controller.destination.value;
       final dist = controller.remainingDistanceKm.value;
       final eta = controller.remainingMinutes.value;
       final status = controller.trackingStatus.value;
@@ -631,7 +627,7 @@ class _TrackingMapSectionState extends State<_TrackingMapSection> {
                 options: MapOptions(
                   initialCenter:
                       volPos ?? destination ?? const LatLng(31.52, 74.35),
-                  initialZoom: 14,
+                  initialZoom: volPos != null ? 16 : 14,
                   minZoom: 1,
                   maxZoom: 19,
                 ),
@@ -689,7 +685,7 @@ class _TrackingMapSectionState extends State<_TrackingMapSection> {
                             ),
                           ),
                         ),
-                      if (destination != null && route.length >= 2)
+                      if (destination != null)
                         Marker(
                           point: destination,
                           width: 24,

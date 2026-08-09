@@ -16,7 +16,7 @@ class TrackingController extends GetxController {
   final RxBool isTracking = false.obs;
 
   String? _currentRequestId;
-  LatLng? _destination;
+  final Rx<LatLng?> destination = Rx<LatLng?>(null);
   StreamSubscription<Map<String, dynamic>>? _locationSub;
   StreamSubscription<Map<String, dynamic>>? _statusSub;
   bool _isFetchingRoute = false;
@@ -45,7 +45,7 @@ class TrackingController extends GetxController {
 
   void startTracking(String requestId, LatLng destination) {
     _currentRequestId = requestId;
-    _destination = destination;
+    this.destination.value = destination;
     isTracking.value = true;
     trackingStatus.value = 'en_route';
     routePoints.clear();
@@ -71,7 +71,7 @@ class TrackingController extends GetxController {
 
       final pos = LatLng(lat, lng);
 
-      final destination = _destination;
+      final destination = this.destination.value;
       if (destination == null) return;
 
       if (routePoints.length < 2) {
@@ -105,7 +105,7 @@ class TrackingController extends GetxController {
     routePoints.clear();
     traveledPoints.clear();
     _currentRequestId = null;
-    _destination = null;
+    destination.value = null;
   }
 
   /// Split the current full route at the volunteer's position:
@@ -114,7 +114,7 @@ class TrackingController extends GetxController {
   /// If the volunteer is clearly off the route, re-fetch a new route (throttled).
   void _updateRouteProgress(LatLng pos) {
     final route = List<LatLng>.from(routePoints);
-    final destination = _destination;
+    final destination = this.destination.value;
     if (route.length < 2 || destination == null) return;
 
     final projected = _projectOnRoute(pos, route);
@@ -172,7 +172,7 @@ class TrackingController extends GetxController {
 
   /// Distance/ETA along the route (fallback: straight line).
   void _updateRemainingDistance(LatLng current) {
-    final destination = _destination;
+    final destination = this.destination.value;
     if (destination == null) return;
 
     double remainingMeters;
