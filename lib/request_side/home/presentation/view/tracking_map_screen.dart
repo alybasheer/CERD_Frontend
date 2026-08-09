@@ -17,6 +17,7 @@ class TrackingMapScreen extends StatefulWidget {
 class _TrackingMapScreenState extends State<TrackingMapScreen> {
   final MapController _mapController = MapController();
   String? _lastCameraKey;
+  double _followedZoom = 16;
 
   TrackingController? _ctrl;
 
@@ -31,7 +32,40 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   }
 
   void _onPositionChanged(LatLng? pos) {
-    if (pos != null) _fitMap();
+    if (pos != null) _followCamera(pos);
+  }
+
+  /// Follow the volunteer along the road: keep the marker centered at a
+  /// distance-aware zoom so the destination stays on screen, and do not
+  /// re-zoom on every tiny GPS jitter.
+  void _followCamera(LatLng pos) {
+    final ctrl = _ctrl;
+    if (ctrl == null) return;
+    final route = ctrl.routePoints;
+    if (route.length < 2) {
+      _fitMap();
+      return;
+    }
+    final destination = route.last;
+    final distM = const Distance().as(LengthUnit.Meter, pos, destination);
+    final zoom = _zoomForDistance(distM);
+    final key =
+        '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
+    if (key == _lastCameraKey && _followedZoom == zoom) return;
+    _lastCameraKey = key;
+    _followedZoom = zoom;
+    try {
+      _mapController.move(pos, zoom);
+    } catch (_) {
+      _lastCameraKey = null;
+    }
+  }
+
+  double _zoomForDistance(double meters) {
+    if (meters < 1500) return 16;
+    if (meters < 5000) return 15;
+    if (meters < 12000) return 13.5;
+    return 12.5;
   }
 
   void _fitMap() {

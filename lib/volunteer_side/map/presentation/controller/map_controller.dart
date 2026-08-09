@@ -98,6 +98,10 @@ class MapCntrl extends GetxController {
     activeRequest.value = request;
     _storage.saveData(_activeRequestStorageKey, request.toJson());
     _scheduleRouteRefresh(force: true);
+    // Live tracking starts automatically (fresh accept or restored active
+    // request after app restart) - the volunteer does not need to tap
+    // Navigate for the requestee to see their location in realtime.
+    startLiveTracking();
   }
 
   void startLiveTracking() {
@@ -139,6 +143,15 @@ class MapCntrl extends GetxController {
     isCompleting.value = true;
     try {
       await _helpRequestRepo.resolveRequest(id);
+      // Close the requestee's live tracking cleanly once the request is done.
+      try {
+        final provider =
+            Get.isRegistered<ChatProvider>()
+                ? Get.find<ChatProvider>()
+                : Get.put(ChatProvider());
+        provider.emitStopTracking(id);
+      } catch (_) {}
+      isTracking.value = false;
       _clearActiveRequest();
       _refreshVolunteerDashboard(completed: true);
       ToastHelper.showSuccess('map.request_completed'.tr);

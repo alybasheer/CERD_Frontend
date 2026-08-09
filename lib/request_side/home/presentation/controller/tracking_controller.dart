@@ -70,13 +70,14 @@ class TrackingController extends GetxController {
       if (lat == null || lng == null) return;
 
       final pos = LatLng(lat, lng);
-      volunteerPosition.value = pos;
 
       final destination = _destination;
       if (destination == null) return;
 
       if (routePoints.length < 2) {
         // First location - fetch the full route from the volunteer's position.
+        // Before the road geometry exists the raw GPS fix is the best marker.
+        volunteerPosition.value = pos;
         _fetchFullRoute(pos, destination);
       } else {
         _updateRouteProgress(pos);
@@ -119,6 +120,11 @@ class TrackingController extends GetxController {
     final projected = _projectOnRoute(pos, route);
     final projPoint = projected.key;
     final traveledDist = projected.value;
+
+    // Snap the live marker to the road geometry so the volunteer never
+    // drifts off the OSRM route (and follows turns instead of cutting
+    // across them). The raw GPS fix is only used until a route exists.
+    volunteerPosition.value = projPoint;
 
     final traveled = <LatLng>[];
     var inserted = false;
@@ -261,6 +267,17 @@ class TrackingController extends GetxController {
   }
 
   static MapEntry<LatLng, double> _projectOnRoute(
+    LatLng point,
+    List<LatLng> polyline,
+  ) {
+    return projectOnRoute(point, polyline);
+  }
+
+  /// Pure projection of [point] onto [polyline] (public for unit tests).
+  /// Returns the closest on-road point and the distance travelled along the
+  /// route up to it. The marker snaps to this point so it rides the OSRM
+  /// geometry instead of cutting across corners.
+  static MapEntry<LatLng, double> projectOnRoute(
     LatLng point,
     List<LatLng> polyline,
   ) {

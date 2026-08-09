@@ -23,7 +23,8 @@ import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vibration/vibration.dart';
 
-class RequestHomeController extends GetxController {
+class RequestHomeController extends GetxController
+    with WidgetsBindingObserver {
   final HelpRequestRepo _repo = HelpRequestRepo();
 
   /// Single shared tracking instance (registered permanent so it survives
@@ -72,8 +73,16 @@ class RequestHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _connectFlowEvents();
     refreshDashboard();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refreshDashboard();
+    }
   }
 
   Future<void> openRequestHelpSheet() async {
@@ -116,6 +125,7 @@ class RequestHomeController extends GetxController {
         longitude: position.longitude,
       );
       activeRequests.assignAll(active.where(_isRealActiveRequest));
+      _reconcileAcceptedTracking();
       unawaited(_resolveRequestLocations(activeRequests));
       nearbyVolunteers.assignAll(volunteers);
     } catch (e) {
@@ -603,22 +613,58 @@ class RequestHomeController extends GetxController {
       return;
     }
 
-    var accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
-    if (accepted == null) {
+    _startTrackingForRequest(requestId);
+    if (trackingController.currentRequestId != requestId) {
       // The dashboard refresh may not have completed yet - retry once.
       await refreshDashboard();
-      accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
+      _startTrackingForRequest(requestId);
     }
-    if (accepted == null) {
+  }
+
+  /// Start tracking a request that is already present in the dashboard list.
+  /// No-op when the request is unknown or already being tracked.
+  void _startTrackingForRequest(String requestId) {
+    if (requestId.isEmpty) return;
+    if (trackingController.isTracking.value &&
+        trackingController.currentRequestId == requestId) {
       return;
     }
+    final accepted = activeRequests.firstWhereOrNull((r) => r.sId == requestId);
+    if (accepted == null) return;
     final loc = accepted.location;
     if (loc?.latitude == null || loc?.longitude == null) return;
-
     trackingController.startTracking(
       requestId,
       LatLng(loc!.latitude!, loc.longitude!),
     );
+  }
+
+  /// Reconcile the dashboard list with the live tracking session so an
+  /// accepted request recovers tracking even when the accept event was
+  /// missed (socket gap, app opened/resumed after acceptance).
+  ///
+  /// The list is newest-first, so the most recent accepted request wins.
+  /// An already-running session is kept as long as its request is still
+  /// accepted; a stale session (request resolved) is replaced.
+  void _reconcileAcceptedTracking() {
+    final acceptedIds = <String>[];
+    for (final request in activeRequests) {
+      final status = request.status?.toLowerCase().trim() ?? '';
+      if (status != 'accepted') continue;
+      final requestId = request.sId;
+      if (requestId == null || requestId.trim().isEmpty) continue;
+      acceptedIds.add(requestId);
+    }
+    if (acceptedIds.isEmpty) return;
+
+    final current = trackingController.currentRequestId;
+    if (trackingController.isTracking.value &&
+        current != null &&
+        acceptedIds.contains(current)) {
+      // The active session still covers an accepted request - keep it.
+      return;
+    }
+    unawaited(_startTrackingAcceptedRequest({'requestId': acceptedIds.first}));
   }
 
   Future<void> submitRating(String requestId) async {
@@ -694,6 +740,7 @@ class RequestHomeController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _flowSubscription?.cancel();
     _sosReminderTimer?.cancel();
     _snoozeResumeTimer?.cancel();

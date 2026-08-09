@@ -33,6 +33,8 @@ class ChatProvider extends GetxController {
   Stream<Map<String, dynamic>> get trackingStatusStream =>
       _socketService.trackingStatusStream;
 
+  Stream<bool> get connectionStream => _socketService.connectionStream;
+
   Timer? _typingTimer;
   String? _sessionUserId;
   bool _socketListenersReady = false;

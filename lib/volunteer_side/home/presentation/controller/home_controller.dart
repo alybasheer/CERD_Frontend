@@ -30,6 +30,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   final RxString fullName = ''.obs;
   final RxString locationName = ''.obs;
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
 
   @override
   void onInit() {
@@ -230,6 +231,15 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         }
       }
     });
+
+    // Socket came back (first connect or reconnect): recover any request/SOS
+    // broadcast that was missed while the channel was down. The location
+    // refresh also keeps this volunteer inside the server-side geo query.
+    _connectionSubscription = provider.connectionStream.listen((connected) {
+      if (connected) {
+        _refreshLocationOnResume();
+      }
+    });
   }
 
   void _showSosAlertDialog(Map<String, dynamic> data) {
@@ -313,6 +323,7 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   @override
   void onClose() {
     _flowSubscription?.cancel();
+    _connectionSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
