@@ -16,14 +16,14 @@ Widget requestsHeaderSection() {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Nearby Requests',
+              'volunteer.home.nearby_requests'.tr,
               style: AppTextStyling.title_18M.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
             Text(
-              'View All',
+              'volunteer.home.view_all'.tr,
               style: AppTextStyling.body_14M.copyWith(
                 color: AppColors.steelBlue,
                 fontWeight: FontWeight.w600,

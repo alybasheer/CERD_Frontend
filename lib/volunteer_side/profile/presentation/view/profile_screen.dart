@@ -19,14 +19,14 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: WeHelpAppBar(
-        title: 'Profile',
-        subtitle: 'Account, role, and preferences',
+        title: 'profile.title'.tr,
+        subtitle: 'profile.subtitle'.tr,
         showBack: true,
         onBack: ctrl.goBackOrHome,
         actions: [
           IconButton(
             onPressed: ctrl.goHome,
-            tooltip: 'Home',
+            tooltip: 'common.home'.tr,
             icon: const Icon(Icons.home_rounded, color: Colors.white),
           ),
         ],

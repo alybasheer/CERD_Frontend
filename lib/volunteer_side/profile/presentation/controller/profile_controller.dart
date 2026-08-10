@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
+import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
@@ -26,6 +28,9 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
   final profileEmail = ''.obs;
   final profileLocation = ''.obs;
   final profileImage = ''.obs;
+  final volunteerRating = 0.0.obs;
+  final volunteerRatingCount = 0.obs;
+  final completedCount = 0.obs;
 
   @override
   void onInit() {
@@ -33,6 +38,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     refreshFromStorage();
     themeLoad();
+    unawaited(fetchVolunteerStats());
   }
 
   @override
@@ -40,6 +46,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       refreshFromStorage();
       unawaited(themeLoad());
+      unawaited(fetchVolunteerStats());
     }
   }
 
@@ -48,7 +55,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
       'profile_name',
       'name',
       'username',
-    ], fallback: 'Community Member');
+    ], fallback: 'profile.fallback_name'.tr);
     final savedEmail = _readFirstString([
       'profile_email',
       'email',
@@ -58,7 +65,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
       'locationName',
       'city',
       'location',
-    ], fallback: 'Location not set');
+    ], fallback: 'profile.fallback_location'.tr);
     final savedProfileImage = _readFirstString([
       'profile_image',
       'profileImage',
@@ -70,15 +77,76 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     emailController.text = savedEmail;
     locationController.text =
         isGenericLocationLabel(savedLocation)
-            ? 'Resolving nearby area...'
+            ? 'volunteer.home.resolving_area'.tr
             : savedLocation;
     role.value = _normalizeRole(_readFirstString(['role']));
     verificationStatus.value = _readFirstString(['verificationStatus']);
     profileImage.value = savedProfileImage;
     isSwitching.value =
         storage.read('theme') == true || storage.read('dark_mode') == true;
+    volunteerRating.value =
+        _readDouble(storage.read('volunteer_rating_average')) ?? 0;
+    volunteerRatingCount.value =
+        _readInt(storage.read('volunteer_rating_count')) ?? 0;
+    completedCount.value = _readInt(storage.read('volunteer_completed_count')) ?? 0;
     _syncPreviewFields();
     unawaited(_resolveSavedLocation(savedLocation));
+  }
+
+  Future<void> fetchVolunteerStats() async {
+    if (!isVolunteer) {
+      return;
+    }
+
+    try {
+      final statusResponse = await DioHelper().get(
+        url: ApiNames.getvolunteerStats,
+        isauthorize: true,
+      );
+
+      if (statusResponse is Map) {
+        final responseMap = Map<String, dynamic>.from(statusResponse);
+        final data = responseMap['data'] is Map
+            ? Map<String, dynamic>.from(responseMap['data'])
+            : responseMap;
+
+        final completed = _readInt(
+          data['completedRequests'] ??
+              data['completedCount'] ??
+              data['totalHelped'] ??
+              data['resolvedRequests'] ??
+              data['helpRequestsCompleted'],
+        );
+        if (completed != null) {
+          completedCount.value = completed;
+        }
+
+        final rating = _readDouble(
+          data['ratingAverage'] ??
+              data['averageRating'] ??
+              data['avgRating'] ??
+              data['rating'],
+        );
+        if (rating != null) {
+          volunteerRating.value = rating;
+        }
+
+        final ratingCount = _readInt(
+          data['ratingCount'] ??
+              data['ratingsCount'] ??
+              data['totalRatings'],
+        );
+        if (ratingCount != null) {
+          volunteerRatingCount.value = ratingCount;
+        }
+      }
+
+      storage.write('volunteer_rating_average', volunteerRating.value);
+      storage.write('volunteer_rating_count', volunteerRatingCount.value);
+      storage.write('volunteer_completed_count', completedCount.value);
+    } catch (_) {
+      // Keep the cached values when the rating stats endpoint is unavailable.
+    }
   }
 
   Future<void> saveProfile() async {
@@ -87,7 +155,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
     final location = locationController.text.trim();
 
     if (name.isEmpty) {
-      ToastHelper.showError('Name is required.');
+      ToastHelper.showError('profile.name_required'.tr);
       return;
     }
 
@@ -107,7 +175,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
       }
       storage.write('profile_image', profileImage.value.trim());
       _syncPreviewFields();
-      ToastHelper.showSuccess('Profile updated.');
+      ToastHelper.showSuccess('profile.updated'.tr);
     } finally {
       isSaving.value = false;
     }
@@ -122,11 +190,11 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
         longitude: position.longitude,
       );
       if (locationName == 'Location unavailable') {
-        ToastHelper.showError('Could not resolve your location name.');
+        ToastHelper.showError('profile.location_failed'.tr);
         return;
       }
       _setResolvedLocation(locationName);
-      ToastHelper.showSuccess('Location updated.');
+      ToastHelper.showSuccess('profile.location_updated'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
@@ -159,23 +227,29 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
 
   String get displayRole {
     if (isVolunteer) {
-      return 'Volunteer';
+      return 'profile.role.volunteer'.tr;
     }
     if (isRequestee) {
-      return 'Requestee';
+      return 'profile.role.requestee'.tr;
     }
-    return 'Community member';
+    return 'profile.role.member'.tr;
   }
 
   String get statusLabel {
     if (isVolunteer) {
       final status = verificationStatus.value.trim();
       if (status.isEmpty) {
-        return 'Verification not submitted';
+        return 'profile.status_not_submitted'.tr;
       }
       return status[0].toUpperCase() + status.substring(1).toLowerCase();
     }
-    return 'Active';
+    return 'common.active'.tr;
+  }
+
+  String get ratingSummary {
+    return '${volunteerRating.value.toStringAsFixed(1)} • '
+        '${volunteerRatingCount.value} '
+        '${volunteerRatingCount.value == 1 ? 'common.rating'.tr : 'common.ratings'.tr}';
   }
 
   Color get roleColor {
@@ -246,7 +320,7 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
 
   void openCommunities() {
     if (!isVolunteer) {
-      ToastHelper.showWarning('Communities are available for volunteers.');
+      ToastHelper.showWarning('profile.warning_communities'.tr);
       return;
     }
     Get.toNamed(RouteNames.communities);
@@ -277,6 +351,29 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
 
   String _normalizeRole(String value) {
     return value.trim().toLowerCase().replaceAll(' ', '_');
+  }
+
+  double? _readDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  int? _readInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
   }
 
   void _syncPreviewFields() {
@@ -310,9 +407,9 @@ class ProfileController extends GetxController with WidgetsBindingObserver {
   }
 
   void _resetLocalProfile() {
-    nameController.text = 'Community Member';
+    nameController.text = 'profile.fallback_name'.tr;
     emailController.text = 'user@example.com';
-    locationController.text = 'Location not set';
+    locationController.text = 'profile.fallback_location'.tr;
     role.value = '';
     verificationStatus.value = '';
     profileImage.value = '';

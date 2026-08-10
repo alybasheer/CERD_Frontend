@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/auth/presentation/controller/auth_contrl.dart';
-import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
@@ -48,8 +47,8 @@ class LoginScreen extends StatelessWidget {
                               children: [
                                 _AuthTextField(
                                   controller: authController.emailController,
-                                  label: 'Email Address',
-                                  hint: 'example@email.com',
+                                  label: 'auth.email.label'.tr,
+                                  hint: 'auth.email.hint'.tr,
                                   icon: Icons.email_outlined,
                                   keyboardType: TextInputType.emailAddress,
                                   validator: authController.validateEmail,
@@ -58,8 +57,8 @@ class LoginScreen extends StatelessWidget {
                                 Obx(
                                   () => _AuthTextField(
                                     controller: authController.passController,
-                                    label: 'Password',
-                                    hint: 'Enter your password',
+                                    label: 'auth.password.label'.tr,
+                                    hint: 'auth.password.hint'.tr,
                                     icon: Icons.lock_outlined,
                                     obscureText:
                                         !authController.isPasswordVisible.value,
@@ -67,8 +66,8 @@ class LoginScreen extends StatelessWidget {
                                     suffixIcon: IconButton(
                                       tooltip:
                                           authController.isPasswordVisible.value
-                                              ? 'Hide password'
-                                              : 'Show password',
+                                              ? 'auth.password.hide'.tr
+                                              : 'auth.password.show'.tr,
                                       icon: Icon(
                                         authController.isPasswordVisible.value
                                             ? Icons.visibility_rounded
@@ -84,6 +83,8 @@ class LoginScreen extends StatelessWidget {
                                 _LoginOptions(controller: authController),
                                 SizedBox(height: AppSize.lH),
                                 _SignInButton(controller: authController),
+                                SizedBox(height: AppSize.mH),
+                                _GoogleSignInButton(controller: authController),
                               ],
                             ),
                           ),
@@ -140,7 +141,7 @@ class _LoginHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.lH),
         Text(
-          'Welcome Back',
+          'auth.login.welcome'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.title_30M.copyWith(
             color: scheme.primary,
@@ -149,7 +150,7 @@ class _LoginHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.xsH),
         Text(
-          'Sign in to continue helping your community.',
+          'auth.login.subtitle'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.body_14M.copyWith(
             color: scheme.onSurfaceVariant,
@@ -313,9 +314,9 @@ class _LoginOptions extends StatelessWidget {
               SizedBox(width: AppSize.xs),
               Flexible(
                 child: Text(
-                  'Remember me',
+                  'auth.remember_me'.tr,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.fade,
                   style: AppTextStyling.body_12S.copyWith(
                     color: scheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -328,51 +329,61 @@ class _LoginOptions extends StatelessWidget {
       ),
     );
 
-    final forgotPassword = TextButton(
-      onPressed: () {
-        ToastHelper.showInfo('Password reset feature coming soon');
-      },
-      style: TextButton.styleFrom(
-        foregroundColor: scheme.primary,
-        minimumSize: Size.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        'Forgot Password?',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTextStyling.body_12S.copyWith(
-          color: scheme.primary,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 315) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              rememberMe,
-              Align(alignment: Alignment.centerLeft, child: forgotPassword),
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: rememberMe),
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: forgotPassword,
-              ),
-            ),
-          ],
-        );
+        return Row(children: [Expanded(child: rememberMe)]);
       },
+    );
+  }
+}
+
+class _GoogleSignInButton extends StatelessWidget {
+  final AuthController controller;
+
+  const _GoogleSignInButton({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Obx(
+      () => SizedBox(
+        width: double.infinity,
+        height: AppSize.buttonHeight,
+        child: OutlinedButton.icon(
+          onPressed:
+              controller.isLoading.value
+                  ? null
+                  : () => controller.signInWithGoogle(),
+          icon: Image.asset(
+            'assets/icons/google_logo.png',
+            height: 20,
+            width: 20,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.login, size: 20),
+          ),
+          label: Text(
+            'auth.sign_in_google'.tr,
+            style: AppTextStyling.body_14M.copyWith(
+              color:
+                  controller.isLoading.value
+                      ? scheme.onSurface.withValues(alpha: 0.38)
+                      : scheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: theme.dividerColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            disabledBackgroundColor:
+                scheme.onSurface.withValues(alpha: 0.04),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -414,7 +425,7 @@ class _SignInButton extends StatelessWidget {
                     ),
                   )
                   : Text(
-                    'Sign In',
+                    'auth.sign_in'.tr,
                     style: AppTextStyling.body_14M.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -438,13 +449,13 @@ class _SignUpPrompt extends StatelessWidget {
         text: TextSpan(
           children: [
             TextSpan(
-              text: "Don't have an account? ",
+              text: 'auth.no_account'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             TextSpan(
-              text: 'Sign Up',
+              text: 'auth.sign_up'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.w800,

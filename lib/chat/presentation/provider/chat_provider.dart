@@ -27,8 +27,23 @@ class ChatProvider extends GetxController {
   Stream<Map<String, dynamic>> get flowEventStream =>
       _socketService.flowEventStream;
 
+  List<Map<String, dynamic>> getBufferedFlowEvents() =>
+      _socketService.getBufferedFlowEvents();
+
+  List<Map<String, dynamic>> getBufferedVolLocations() =>
+      _socketService.getBufferedVolLocations();
+
+  Stream<Map<String, dynamic>> get volunteerLocationStream =>
+      _socketService.volunteerLocationStream;
+
+  Stream<Map<String, dynamic>> get trackingStatusStream =>
+      _socketService.trackingStatusStream;
+
+  Stream<bool> get connectionStream => _socketService.connectionStream;
+
   Timer? _typingTimer;
   String? _sessionUserId;
+  bool _socketListenersReady = false;
 
   String? get currentUserId =>
       _sessionUserId ?? _storage.readData('userId')?.toString();
@@ -42,16 +57,39 @@ class ChatProvider extends GetxController {
   /// Initialize chat system
   Future<void> _initializeChat() async {
     try {
+      await ensureConnected();
+      await Future.wait([fetchConversations(), fetchUnreadCount()]);
+    } catch (e) {
+      ToastHelper.showError('Failed to initialize chat');
+    }
+  }
+
+  /// Ensures the real-time socket is connected with the CURRENT logged-in
+  /// user's token. Safe to call any time (login, resume, home screen init):
+  /// it reconnects after a drop and swaps identity after logout/login.
+  Future<void> ensureConnected() async {
+    try {
       final token = _storage.readData('token');
       if (token == null) return;
       _sessionUserId = _storage.readData('userId')?.toString();
 
       _socketService.connect(token);
-      _setupSocketListeners();
-      await Future.wait([fetchConversations(), fetchUnreadCount()]);
-    } catch (e) {
-      ToastHelper.showError('Failed to initialize chat');
+      if (!_socketListenersReady) {
+        _socketListenersReady = true;
+        _setupSocketListeners();
+      }
+    } catch (_) {
+      // Socket failures are non-fatal; reconnection is automatic.
     }
+  }
+
+  /// Disconnects the real-time socket (used on logout) so the server
+  /// unregisters this user as "online". The next login reconnects with the
+  /// fresh token via [ensureConnected].
+  void disconnectSocket() {
+    try {
+      _socketService.disconnect();
+    } catch (_) {}
   }
 
   /// Setup socket event listeners
@@ -306,6 +344,26 @@ class ChatProvider extends GetxController {
         _socketService.emitTyping(receiverId: receiverId, isTyping: false);
       });
     }
+  }
+
+  void emitStartTracking(String requestId) {
+    _socketService.emitStartTracking(requestId);
+  }
+
+  void emitStopTracking(String requestId) {
+    _socketService.emitStopTracking(requestId);
+  }
+
+  void emitLocationUpdate({
+    required double latitude,
+    required double longitude,
+    required String requestId,
+  }) {
+    _socketService.emitLocationUpdate(
+      latitude: latitude,
+      longitude: longitude,
+      requestId: requestId,
+    );
   }
 
   // ============ UNREAD COUNT ============

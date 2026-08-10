@@ -65,8 +65,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                       _RegisterTextField(
                                         controller:
                                             authController.usernameController,
-                                        label: 'Full Name',
-                                        hint: 'Your full name',
+                                        label: 'auth.full_name.label'.tr,
+                                        hint: 'auth.full_name.hint'.tr,
                                         icon: Icons.person_outline_rounded,
                                         textInputAction: TextInputAction.next,
                                         validator: authController.validateName,
@@ -75,8 +75,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                       _RegisterTextField(
                                         controller:
                                             authController.emailController,
-                                        label: 'Email Address',
-                                        hint: 'example@email.com',
+                                        label: 'auth.email.label'.tr,
+                                        hint: 'auth.email.hint'.tr,
                                         icon: Icons.email_outlined,
                                         keyboardType:
                                             TextInputType.emailAddress,
@@ -88,8 +88,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                         () => _RegisterTextField(
                                           controller:
                                               authController.passController,
-                                          label: 'Password',
-                                          hint: 'Create a password',
+                                          label: 'auth.password.label'.tr,
+                                          hint: 'auth.password.create_hint'.tr,
                                           icon: Icons.lock_outline_rounded,
                                           obscureText:
                                               !authController
@@ -103,8 +103,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                                 authController
                                                         .isPasswordVisible
                                                         .value
-                                                    ? 'Hide password'
-                                                    : 'Show password',
+                                                        ? 'auth.password.hide'.tr
+                                                        : 'auth.password.show'.tr,
                                             icon: Icon(
                                               authController
                                                       .isPasswordVisible
@@ -130,8 +130,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                           controller:
                                               authController
                                                   .confirmPassController,
-                                          label: 'Confirm Password',
-                                          hint: 'Repeat your password',
+                                          label: 'auth.password.confirm_label'.tr,
+                                          hint: 'auth.password.confirm_hint'.tr,
                                           icon: Icons.lock_reset_rounded,
                                           obscureText:
                                               !authController
@@ -146,8 +146,8 @@ class RegisterScreenProfessional extends StatelessWidget {
                                                 authController
                                                         .isConfirmPasswordVisible
                                                         .value
-                                                    ? 'Hide password'
-                                                    : 'Show password',
+                                                        ? 'auth.password.hide'.tr
+                                                        : 'auth.password.show'.tr,
                                             icon: Icon(
                                               authController
                                                       .isConfirmPasswordVisible
@@ -239,9 +239,10 @@ class _TopBar extends StatelessWidget {
         SizedBox(width: AppSize.s),
         Expanded(
           child: Text(
-            'Join CERD Community',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            'auth.register.top'.tr,
+            maxLines: 2,
+            overflow: TextOverflow.fade,
+            softWrap: true,
             style: AppTextStyling.body_12S.copyWith(
               color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -285,7 +286,7 @@ class _RegisterHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.mH),
         Text(
-          'Create Account',
+          'auth.register.title'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.title_30M.copyWith(
             color: scheme.primary,
@@ -294,10 +295,10 @@ class _RegisterHeader extends StatelessWidget {
         ),
         SizedBox(height: AppSize.xsH),
         Text(
-          'Create your CERD account to request help or support people nearby.',
+          'auth.register.subtitle'.tr,
           textAlign: TextAlign.center,
           maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+          overflow: TextOverflow.fade,
           style: AppTextStyling.body_14M.copyWith(
             color: scheme.onSurfaceVariant,
             height: 1.35,
@@ -441,17 +442,20 @@ class _PasswordRequirements extends StatelessWidget {
       builder: (context, _) {
         final password = controller.text;
         final requirements = [
-          _RequirementData(label: '6+ characters', isMet: password.length >= 6),
           _RequirementData(
-            label: 'Uppercase',
+            label: 'auth.password.req.characters'.tr,
+            isMet: password.length >= 6,
+          ),
+          _RequirementData(
+            label: 'auth.password.req.uppercase'.tr,
             isMet: RegExp(r'[A-Z]').hasMatch(password),
           ),
           _RequirementData(
-            label: 'Lowercase',
+            label: 'auth.password.req.lowercase'.tr,
             isMet: RegExp(r'[a-z]').hasMatch(password),
           ),
           _RequirementData(
-            label: 'Number',
+            label: 'auth.password.req.number'.tr,
             isMet: RegExp(r'[0-9]').hasMatch(password),
           ),
         ];
@@ -474,7 +478,7 @@ class _PasswordRequirements extends StatelessWidget {
                   Icon(Icons.shield_outlined, size: 17, color: scheme.primary),
                   SizedBox(width: AppSize.xs),
                   Text(
-                    'Password must include',
+                    'auth.password.requirements'.tr,
                     style: AppTextStyling.body_12S.copyWith(
                       color: scheme.onSurface,
                       fontWeight: FontWeight.w800,
@@ -588,7 +592,7 @@ class _CreateAccountButton extends StatelessWidget {
                     ),
                   )
                   : Text(
-                    'Create Account',
+                    'auth.register.title'.tr,
                     style: AppTextStyling.body_14M.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -612,13 +616,13 @@ class _SignInPrompt extends StatelessWidget {
         text: TextSpan(
           children: [
             TextSpan(
-              text: 'Already have an account? ',
+              text: 'auth.have_account'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             TextSpan(
-              text: 'Sign In',
+              text: 'auth.sign_in'.tr,
               style: AppTextStyling.body_12S.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.w800,

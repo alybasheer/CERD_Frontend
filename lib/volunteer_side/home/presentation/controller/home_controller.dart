@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
@@ -8,10 +9,15 @@ import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
 import 'package:fyp_source_code/services/location_services.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
+import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
+import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
+import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
+import 'package:fyp_source_code/volunteer_side/map/data/map_repo.dart';
 import 'package:get/get.dart';
+import 'package:vibration/vibration.dart';
 
-class HomeController extends GetxController {
+class HomeController extends GetxController with WidgetsBindingObserver {
   final HelpRequestRepo _repo = HelpRequestRepo();
   final StorageHelper _storage = StorageHelper();
 
@@ -19,30 +25,64 @@ class HomeController extends GetxController {
   final RxList<HelpRequest> requests = RxList();
   final RxSet<String> acceptingRequestIds = <String>{}.obs;
   final RxInt completedCount = 0.obs;
-  final RxDouble volunteerRating = 0.0.obs;
+  final RxDouble volunteerRating = 1.0.obs;
+  final RxInt volunteerRatingCount = 0.obs;
   final RxString fullName = ''.obs;
   final RxString locationName = ''.obs;
   StreamSubscription<Map<String, dynamic>>? _flowSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserSummary();
     _connectFlowEvents();
     fetchRequests();
     fetchVolunteerStats();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      fetchVolunteerStats();
+      _refreshLocationOnResume();
+    }
+  }
+
+  /// Keeps the server-side volunteer location fresh so real-time "nearby"
+  /// delivery works even when the volunteer never opens the Map tab.
+  /// Without this the geo query in the backend excludes the volunteer.
+  void _refreshDbLocation(double latitude, double longitude) {
+    try {
+      MapRepo()
+          .updateCurrentLocation(lat: latitude, long: longitude)
+          .catchError((_) {});
+    } catch (_) {}
+  }
+
+  void _refreshLocationOnResume() {
+    getQuickPosition().then((position) {
+      _refreshDbLocation(position.latitude, position.longitude);
+      fetchRequests();
+    }).catchError((_) {});
+  }
+
   Future<void> fetchRequests() async {
     isLoading.value = true;
     try {
-      final position = await getCurrentLocation();
+      final position = await getQuickPosition();
       _resolveHeaderLocation(position.latitude, position.longitude);
+      _refreshDbLocation(position.latitude, position.longitude);
       final list = await _repo.getOpenRequests(
         latitude: position.latitude,
         longitude: position.longitude,
       );
-      final visibleRequests = list.where(_isNotOwnRequest).toList();
+      final visibleRequests = list.where(_isNotOwnRequest).toList()
+        ..sort((a, b) {
+          if (a.isSos != b.isSos) return a.isSos ? -1 : 1;
+          return (b.createdAt ?? '').compareTo(a.createdAt ?? '');
+        });
       requests.assignAll(visibleRequests);
       unawaited(_resolveRequestLocations(visibleRequests));
     } catch (e) {
@@ -56,14 +96,14 @@ class HomeController extends GetxController {
   Future<void> acceptRequest(HelpRequest request) async {
     final id = request.sId;
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('Request is not available right now.');
+      ToastHelper.showError('volunteer.home.request_unavailable'.tr);
       return;
     }
     if (acceptingRequestIds.contains(id)) {
       return;
     }
     if (!_isNotOwnRequest(request)) {
-      ToastHelper.showWarning('You cannot accept your own request.');
+      ToastHelper.showWarning('volunteer.home.cannot_accept_own'.tr);
       await fetchRequests();
       return;
     }
@@ -110,36 +150,47 @@ class HomeController extends GetxController {
 
   Future<void> fetchVolunteerStats() async {
     try {
-      final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
+      final statusResponse = await DioHelper().get(
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
 
-      final stats = _extractStatsMap(response);
-      if (stats == null) {
-        return;
+      final stats = _extractStatsMap(statusResponse);
+      if (stats != null) {
+        final completed = _readInt(
+          stats['completedRequests'] ??
+              stats['completedCount'] ??
+              stats['totalHelped'] ??
+              stats['resolvedRequests'] ??
+              stats['helpRequestsCompleted'],
+        );
+        if (completed != null) {
+          completedCount.value = completed;
+        }
+
+        final rating = _readDouble(
+          stats['ratingAverage'] ??
+              stats['averageRating'] ??
+              stats['avgRating'] ??
+              stats['rating'],
+        );
+        if (rating != null) {
+          volunteerRating.value = rating;
+        }
+
+        final ratingCount = _readInt(
+          stats['ratingCount'] ??
+              stats['ratingsCount'] ??
+              stats['totalRatings'],
+        );
+        if (ratingCount != null) {
+          volunteerRatingCount.value = ratingCount;
+        }
       }
 
-      final completed = _readInt(
-        stats['completedRequests'] ??
-            stats['completedCount'] ??
-            stats['totalCompleted'] ??
-            stats['resolvedRequests'] ??
-            stats['helpRequestsCompleted'],
-      );
-      if (completed != null) {
-        completedCount.value = completed;
-      }
-
-      final rating = _readDouble(
-        stats['rating'] ??
-            stats['averageRating'] ??
-            stats['avgRating'] ??
-            stats['volunteerRating'],
-      );
-      if (rating != null) {
-        volunteerRating.value = rating;
-      }
+      _storage.saveData('volunteer_rating_average', volunteerRating.value);
+      _storage.saveData('volunteer_rating_count', volunteerRatingCount.value);
+      _storage.saveData('volunteer_completed_count', completedCount.value);
     } catch (e) {
       // Leave the last known stats in place if the endpoint fails.
     }
@@ -152,26 +203,146 @@ class HomeController extends GetxController {
             : Get.put(ChatProvider());
 
     _flowSubscription = provider.flowEventStream.listen((event) {
-      final eventName = event['event']?.toString();
-      if (eventName == 'new_help_request') {
-        fetchRequests();
-        return;
-      }
-      if (eventName == 'help_request_accepted' ||
-          eventName == 'help_request_resolved' ||
-          eventName == 'new_alert') {
-        fetchRequests();
-        if (eventName == 'help_request_accepted' ||
-            eventName == 'help_request_resolved') {
-          fetchVolunteerStats();
+      // Defer ALL reactive mutations to the next microtask to prevent
+      // setState-during-build when a flow event arrives during a build.
+      Future.microtask(() {
+        final eventName = event['event']?.toString();
+        if (eventName == 'new_help_request') {
+          final data = event['data'];
+          final isSos =
+              data is Map &&
+              (data['isSos'] == true || data['escalated'] == true);
+          if (isSos) {
+            Vibration.vibrate(pattern: [0, 400, 200, 400, 200, 800]);
+            SystemSound.play(SystemSoundType.alert);
+            _showSosAlertDialog(Map<String, dynamic>.from(data));
+          }
+          fetchRequests();
+          return;
         }
-      }
+        if (eventName == 'help_request_cancelled') {
+          fetchRequests();
+          return;
+        }
+        if (eventName == 'help_request_accepted' ||
+            eventName == 'help_request_resolved' ||
+            eventName == 'new_alert') {
+          fetchRequests();
+          if (eventName == 'help_request_accepted' ||
+              eventName == 'help_request_resolved') {
+            fetchVolunteerStats();
+          }
+        }
+      });
     });
+
+    // Socket came back (first connect or reconnect): recover any request/SOS
+    // broadcast that was missed while the channel was down. Process buffered
+    // events first, then refresh via HTTP.
+    _connectionSubscription = provider.connectionStream.listen((connected) {
+      Future.microtask(() {
+        if (connected) {
+          final buffered = provider.getBufferedFlowEvents();
+          for (final event in buffered) {
+            final name = event['event']?.toString();
+            if (name == 'new_help_request' ||
+                name == 'help_request_accepted' ||
+                name == 'help_request_resolved' ||
+                name == 'help_request_cancelled' ||
+                name == 'new_alert') {
+              fetchRequests();
+              break;
+            }
+          }
+          _refreshLocationOnResume();
+        }
+      });
+    });
+  }
+
+  void _showSosAlertDialog(Map<String, dynamic> data) {
+    if (Get.isDialogOpen ?? false) return;
+    final request = HelpRequest.fromJson(data);
+
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.sos, color: AppColors.emergencyRed),
+              SizedBox(width: 8),
+              Text('request.home.sos'.tr),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                request.displayTitle,
+                style: AppTextStyling.title_16M.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: AppSize.sH),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: AppColors.emergencyRed,
+                  ),
+                  SizedBox(width: AppSize.xs),
+                  Expanded(
+                    child: Text(
+                      request.displayLocation,
+                      style: AppTextStyling.body_12S.copyWith(
+                        color: AppColors.mediumGray,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSize.sH),
+              Text(
+                'volunteer.home.sos_intro'.tr,
+                style: AppTextStyling.body_14M.copyWith(
+                  color: AppColors.emergencyRed,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text('common.later'.tr),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Get.back();
+                acceptRequest(request);
+              },
+              icon: const Icon(Icons.navigation_rounded, size: 18),
+              label: Text('volunteer.home.accept_navigate'.tr),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.emergencyRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierColor: AppColors.darkGray.withValues(alpha: 0.5),
+    );
   }
 
   @override
   void onClose() {
     _flowSubscription?.cancel();
+    _connectionSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
 
@@ -228,7 +399,7 @@ class HomeController extends GetxController {
     if (storedName is String && storedName.trim().isNotEmpty) {
       fullName.value = storedName.trim();
     } else {
-      fullName.value = 'Volunteer User';
+      fullName.value = 'volunteer.home.default_name'.tr;
     }
 
     final storedLocation =
@@ -239,14 +410,22 @@ class HomeController extends GetxController {
       final location = storedLocation.trim();
       locationName.value =
           isGenericLocationLabel(location)
-              ? 'Resolving nearby area...'
+              ? 'volunteer.home.resolving_area'.tr
               : location;
       if (isGenericLocationLabel(location)) {
         unawaited(_resolveStoredLocation(location));
       }
     } else {
-      locationName.value = 'Resolving nearby area...';
+      locationName.value = 'volunteer.home.resolving_area'.tr;
     }
+
+    volunteerRating.value =
+        _readDouble(_storage.readData('volunteer_rating_average')) ?? 0;
+    volunteerRatingCount.value =
+        _readInt(_storage.readData('volunteer_rating_count')) ?? 0;
+    completedCount.value =
+        _readInt(_storage.readData('volunteer_completed_count')) ??
+        completedCount.value;
   }
 
   void _resolveHeaderLocation(double latitude, double longitude) {

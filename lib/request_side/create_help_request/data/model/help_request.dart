@@ -68,6 +68,7 @@ class HelpRequest {
   String? acceptedBy;
   String? acceptedByName;
   bool isSos = false;
+  int? notifiedCount;
   double? rating;
   String? outcome;
   String? expiresAt;
@@ -91,6 +92,7 @@ class HelpRequest {
     this.acceptedBy,
     this.acceptedByName,
     this.isSos = false,
+    this.notifiedCount,
     this.rating,
     this.outcome,
     this.expiresAt,
@@ -150,6 +152,7 @@ class HelpRequest {
         _readBool(json['isSos']) ||
         _readBool(json['sos']) ||
         (category?.toLowerCase() == 'sos');
+    notifiedCount = _readInt(json['notifiedCount']);
     rating = _readDouble(json['rating'] ?? json['volunteerRating']);
     outcome = json['outcome']?.toString();
     expiresAt = json['expiresAt']?.toString();
@@ -227,7 +230,8 @@ class NearbyVolunteer {
   final String name;
   final String email;
   final String expertise;
-  final double rating;
+  final double ratingAverage;
+  final int ratingCount;
   final bool isOnline;
   final double? distanceKm;
   final String? locationName;
@@ -237,7 +241,8 @@ class NearbyVolunteer {
     required this.name,
     required this.email,
     required this.expertise,
-    required this.rating,
+    required this.ratingAverage,
+    required this.ratingCount,
     required this.isOnline,
     this.distanceKm,
     this.locationName,
@@ -261,7 +266,23 @@ class NearbyVolunteer {
           'Volunteer',
       email: user['email']?.toString() ?? '',
       expertise: expertise.isEmpty ? 'General' : expertise,
-      rating: _readDouble(user['rating'] ?? user['averageRating']) ?? 0,
+      ratingAverage:
+          _readDouble(
+            user['ratingAverage'] ??
+                user['averageRating'] ??
+                user['rating'] ??
+                _readNestedValue(user['stats'], 'ratingAverage') ??
+                _readNestedValue(user['stats'], 'averageRating'),
+          ) ??
+          0,
+      ratingCount: _readInt(
+            user['ratingCount'] ??
+                user['ratingsCount'] ??
+                user['totalRatings'] ??
+                _readNestedValue(user['stats'], 'ratingCount') ??
+                _readNestedValue(user['stats'], 'ratingsCount'),
+          ) ??
+          0,
       isOnline: _readBool(
         user['isOnline'] ?? user['online'] ?? json['isOnline'],
       ),
@@ -372,6 +393,26 @@ double? _readDouble(dynamic value) {
   }
   if (value is String) {
     return double.tryParse(value);
+  }
+  return null;
+}
+
+int? _readInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  if (value is String) {
+    return int.tryParse(value);
+  }
+  return null;
+}
+
+dynamic _readNestedValue(dynamic value, String key) {
+  if (value is Map) {
+    return value[key];
   }
   return null;
 }

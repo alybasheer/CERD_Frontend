@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class RequestDescriptionField extends StatelessWidget {
   final TextEditingController controller;
@@ -30,7 +31,7 @@ class RequestDescriptionField extends StatelessWidget {
           color: scheme.onSurface,
         ),
         decoration: InputDecoration(
-          hintText: 'Describe your situation... ',
+          hintText: 'request.form.description_hint'.tr,
           hintStyle: AppTextStyling.body_14M.copyWith(
             color: scheme.onSurfaceVariant,
           ),

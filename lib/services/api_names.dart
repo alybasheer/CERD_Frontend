@@ -10,6 +10,7 @@ class ApiNames {
           : normalizedBaseUrl;
   static const signup = 'authentication/signup';
   static const login = 'authentication/login';
+  static const googleLogin = 'authentication/google-login';
   static const voulnteerVerification = 'volunteer/apply';
   static const volunteerMedia = 'volunteer/media';
   static const voulnteerApplications = 'admin/volunteer-applications';
@@ -18,7 +19,7 @@ class ApiNames {
   static String rejectVolunteer(String id) =>
       'admin/volunteer-applications/$id/reject';
   static const getLocation = 'authentication/location';
-  static const volunteerStatus = 'volunteer/status';
+  static const getvolunteerStats = '/help-requests/my/stats';
   // Chat System Endpoints
   static const chatConversations = 'chat/conversations';
   static String chatConversation(String otherUserId, {int limit = 50}) =>
@@ -28,12 +29,16 @@ class ApiNames {
   static const coordinationContacts = 'chat/coordination/contacts';
   static const helpRequests = 'help-requests';
   static const helpRequestMedia = 'help-requests/media';
-  static const helpRequestsSos = 'help-requests/sos';
+  static const helpRequestsSos = 
+'help-requests/sos';
+  static const helpRequestsSosCancel = 
+'help-requests/sos/cancel';
   static const activeHelpRequests = 'help-requests/my/active';
   static String acceptHelpRequest(String id) => 'help-requests/$id/accept';
   static String resolveHelpRequest(String id) => 'help-requests/$id/resolve';
   static String releaseHelpRequest(String id) => 'help-requests/$id/release';
   static String rateHelpRequest(String id) => 'help-requests/$id/rating';
+
   static String nearbyVolunteers({
     required double lat,
     required double lng,

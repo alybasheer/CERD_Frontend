@@ -1,3 +1,5 @@
+import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class StorageHelper {
@@ -28,6 +30,13 @@ class StorageHelper {
   }
 
   void clearSessionData() {
+    // Drop the real-time socket so the server unregisters this user as
+    // "online" the moment they log out (prevents stale delivery + re-login
+    // identity mixups).
+    if (Get.isRegistered<ChatProvider>()) {
+      Get.find<ChatProvider>().disconnectSocket();
+    }
+
     final keys = List<String>.from(
       storage.getKeys<Iterable>().map((key) => key.toString()),
     );

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/admin/presentation/controller/admin_panel_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
@@ -39,7 +40,7 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                         children: [
                           Expanded(
                             child: Text(
-                              'Volunteer Review',
+                              'admin.volunteer_review'.tr,
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
@@ -55,7 +56,7 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                             backgroundColor: Colors.blue.withValues(
                               alpha: 0.10,
                             ),
-                            backgroundImage: NetworkImage(
+                            backgroundImage: CachedNetworkImageProvider(
                               _stringValue(data['profileImage']),
                               headers: imageHeaders,
                             ),
@@ -63,41 +64,41 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                         ),
                       if (_stringValue(data['profileImage']).isNotEmpty)
                         const SizedBox(height: 16),
-                      _infoRow('Name', _stringValue(data['name'])),
+                       _infoRow('admin.label_name'.tr, _stringValue(data['name'])),
                       _infoRow(
-                        'Email',
+                        'admin.label_email'.tr,
                         _stringValue(userData['email']).isNotEmpty
                             ? _stringValue(userData['email'])
-                            : 'Not available',
+                            : 'admin.not_available'.tr,
                       ),
                       _infoRow(
-                        'Phone',
+                        'admin.label_phone'.tr,
                         _stringValue(userData['phone']).isNotEmpty
                             ? _stringValue(userData['phone'])
-                            : 'Not provided',
+                            : 'admin.phone_not_provided'.tr,
                       ),
-                      _infoRow('City', _stringValue(data['city'])),
-                      _infoRow('Location', _stringValue(data['location'])),
+                      _infoRow('admin.label_city'.tr, _stringValue(data['city'])),
+                      _infoRow('admin.label_location'.tr, _stringValue(data['location'])),
                       if (_coordinateText(data).isNotEmpty)
-                        _infoRow('GPS', _coordinateText(data)),
-                      _infoRow('Expertise', _stringValue(data['expertise'])),
-                      _infoRow('CNIC', _stringValue(data['cnic'])),
-                      _infoRow('Reason', _stringValue(data['reason'])),
+                        _infoRow('admin.label_gps'.tr, _coordinateText(data)),
+                      _infoRow('admin.label_expertise'.tr, _stringValue(data['expertise'])),
+                      _infoRow('admin.label_cnic'.tr, _stringValue(data['cnic'])),
+                      _infoRow('admin.label_reason'.tr, _stringValue(data['reason'])),
                       const SizedBox(height: 18),
                       Text(
-                        'Verification Documents',
+                        'admin.verification_docs'.tr,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 12),
                       _DocumentPreview(
-                        title: 'CNIC Front',
+                        title: 'admin.cnic_front'.tr,
                         imageUrl: _stringValue(data['cnicFrontImage']),
                         headers: imageHeaders,
                       ),
                       const SizedBox(height: 12),
                       _DocumentPreview(
-                        title: 'CNIC Back',
+                        title: 'admin.cnic_back'.tr,
                         imageUrl: _stringValue(data['cnicBackImage']),
                         headers: imageHeaders,
                       ),
@@ -120,7 +121,7 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text('Reject'),
+                        child: Text('common.reject'.tr),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -135,7 +136,7 @@ void popupCard(BuildContext context, Map<String, dynamic> application) {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text('Approve'),
+                        child: Text('common.approve'.tr),
                       ),
                     ),
                   ],
@@ -164,7 +165,7 @@ Widget _infoRow(String title, String value) {
         ),
         const SizedBox(height: 4),
         Text(
-          value.isEmpty ? 'Not provided' : value,
+          value.isEmpty ? 'admin.not_provided'.tr : value,
           style: TextStyle(color: Colors.grey.shade800, height: 1.35),
         ),
       ],
@@ -252,7 +253,7 @@ class _DocumentPreview extends StatelessWidget {
         Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade500),
         const SizedBox(height: 8),
         Text(
-          'Document not available',
+          'admin.doc_not_available'.tr,
           style: TextStyle(
             color: Colors.grey.shade700,
             fontWeight: FontWeight.w600,
@@ -279,7 +280,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        status.isEmpty ? 'pending' : status.toUpperCase(),
+        _statusLabel(status),
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
@@ -287,6 +288,18 @@ class _StatusChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String _statusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case 'approved':
+      return 'common.approved'.tr;
+    case 'rejected':
+      return 'common.rejected'.tr;
+    case 'pending':
+    default:
+      return 'common.pending'.tr;
   }
 }
 

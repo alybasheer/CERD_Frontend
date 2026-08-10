@@ -1,6 +1,7 @@
 import 'package:fyp_source_code/network/api_service.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
+import 'package:fyp_source_code/services/app_update_service.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:get/get.dart';
 
@@ -10,6 +11,16 @@ class SplashController extends GetxController {
   final RxBool isLoading = true.obs;
   final Rx<UserStatus> userStatus = UserStatus.notAuthenticated.obs;
 
+  Future<void> _checkForAppUpdate() async {
+    final update = await AppUpdateService().checkForUpdate();
+    if (update != null && update.required) {
+      // Block until a required update completes before entering the app.
+      await AppUpdateService().promptUpdate(update, required: true);
+    } else if (update != null) {
+      AppUpdateService().promptUpdate(update);
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -18,7 +29,9 @@ class SplashController extends GetxController {
 
   Future<void> _checkUserStatusAndNavigate() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 2600));
+      await Future.delayed(const Duration(milliseconds: 900));
+
+      _checkForAppUpdate();
 
       if (!_hasSeenOnboarding()) {
         Get.offAllNamed(RouteNames.onboarding);
@@ -86,10 +99,12 @@ class SplashController extends GetxController {
 
   Future<void> _fetchAndNavigateBasedOnStatus() async {
     try {
-      final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
-        isauthorize: true,
-      );
+      final response = await DioHelper()
+          .get(
+            url: ApiNames.getvolunteerStats,
+            isauthorize: true,
+          )
+          .timeout(const Duration(seconds: 8));
 
       var verificationStatus = '';
       final snapshot = _VolunteerStatusSnapshot.fromResponse(response);
@@ -139,10 +154,12 @@ class SplashController extends GetxController {
 
   Future<_VolunteerStatusSnapshot> _fetchVolunteerStatus() async {
     try {
-      final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
-        isauthorize: true,
-      );
+      final response = await DioHelper()
+          .get(
+            url: ApiNames.getvolunteerStats,
+            isauthorize: true,
+          )
+          .timeout(const Duration(seconds: 8));
       return _VolunteerStatusSnapshot.fromResponse(response);
     } catch (_) {
       return const _VolunteerStatusSnapshot(status: '', hasApplication: false);

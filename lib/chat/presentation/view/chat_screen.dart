@@ -78,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
           final _ = chatProvider.typingUsers.length;
           final isTyping = chatProvider.typingUsers[widget.receiverId] == true;
           return Text(
-            isTyping ? 'typing...' : 'Direct conversation',
+            isTyping ? 'chat.typing'.tr : 'chat.direct_conversation'.tr,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTextStyling.body_12S.copyWith(
@@ -99,7 +99,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (messages.isEmpty) {
                   return Center(
                     child: Text(
-                      "No messages yet",
+                      'chat.no_messages'.tr,
                       style: AppTextStyling.body_14M.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -149,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           );
                         },
                         decoration: InputDecoration(
-                          hintText: "Message...",
+                          hintText: 'chat.message_hint'.tr,
                           hintStyle: AppTextStyling.body_12S.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
@@ -270,6 +270,7 @@ class ChatMessageBubble extends StatelessWidget {
         ),
         child: Text(
           msg.content,
+          maxLines: 10,
           style: AppTextStyling.body_14M.copyWith(
             color: isMe ? AppColors.pureWhite : scheme.onSurface,
             height: 1.4,

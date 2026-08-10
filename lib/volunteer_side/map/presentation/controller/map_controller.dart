@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:fyp_source_code/chat/presentation/provider/chat_provider.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/repo/help_request_repo.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
@@ -29,10 +30,12 @@ class MapCntrl extends GetxController {
   final RxBool isCancelling = false.obs;
   final RxString selectedRoleFilter = 'all'.obs;
   final RxList<LatLng> shortestPathPoints = <LatLng>[].obs;
+  final RxBool isTracking = false.obs;
   StreamSubscription<Position>? positionStream;
   DateTime? _lastRouteFetchAt;
   LatLng? _lastRouteFetchFrom;
   bool _isFetchingRoute = false;
+  bool _isDisposed = false;
 
   @override
   void onInit() {
@@ -43,6 +46,7 @@ class MapCntrl extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
     positionStream?.cancel();
     super.onClose();
   }
@@ -94,22 +98,63 @@ class MapCntrl extends GetxController {
     activeRequest.value = request;
     _storage.saveData(_activeRequestStorageKey, request.toJson());
     _scheduleRouteRefresh(force: true);
+    // Live tracking starts automatically (fresh accept or restored active
+    // request after app restart) - the volunteer does not need to tap
+    // Navigate for the requestee to see their location in realtime.
+    startLiveTracking();
+  }
+
+  void startLiveTracking() {
+    final requestId = activeRequest.value?.sId?.trim();
+    if (requestId == null || requestId.isEmpty) return;
+    isTracking.value = true;
+    try {
+      final provider =
+          Get.isRegistered<ChatProvider>()
+              ? Get.find<ChatProvider>()
+              : Get.put(ChatProvider());
+      provider.emitStartTracking(requestId);
+      ToastHelper.showSuccess('map.tracking_started'.tr);
+    } catch (_) {}
+  }
+
+  void stopLiveTracking() {
+    final requestId = activeRequest.value?.sId?.trim();
+    if (requestId == null || requestId.isEmpty) return;
+    isTracking.value = false;
+    try {
+      final provider =
+          Get.isRegistered<ChatProvider>()
+              ? Get.find<ChatProvider>()
+              : Get.put(ChatProvider());
+      provider.emitStopTracking(requestId);
+      ToastHelper.showSuccess('map.tracking_ended'.tr);
+    } catch (_) {}
   }
 
   Future<void> completeActiveRequest() async {
     final request = activeRequest.value;
     final id = request?.sId?.trim();
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('No active request to complete.');
+      ToastHelper.showError('map.no_active_complete'.tr);
       return;
     }
 
     isCompleting.value = true;
     try {
       await _helpRequestRepo.resolveRequest(id);
+      // Close the requestee's live tracking cleanly once the request is done.
+      try {
+        final provider =
+            Get.isRegistered<ChatProvider>()
+                ? Get.find<ChatProvider>()
+                : Get.put(ChatProvider());
+        provider.emitStopTracking(id);
+      } catch (_) {}
+      isTracking.value = false;
       _clearActiveRequest();
       _refreshVolunteerDashboard(completed: true);
-      ToastHelper.showSuccess('Request completed.');
+      ToastHelper.showSuccess('map.request_completed'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
@@ -121,7 +166,7 @@ class MapCntrl extends GetxController {
     final request = activeRequest.value;
     final id = request?.sId?.trim();
     if (id == null || id.isEmpty) {
-      ToastHelper.showError('No active request to cancel.');
+      ToastHelper.showError('map.no_active_cancel'.tr);
       return;
     }
 
@@ -130,7 +175,7 @@ class MapCntrl extends GetxController {
       await _helpRequestRepo.releaseRequest(id);
       _clearActiveRequest();
       _refreshVolunteerDashboard();
-      ToastHelper.showSuccess('Request cancelled.');
+      ToastHelper.showSuccess('map.request_cancelled'.tr);
     } catch (e) {
       ToastHelper.showErrorMessage(e);
     } finally {
@@ -142,7 +187,7 @@ class MapCntrl extends GetxController {
     final request = activeRequest.value;
     final userId = request?.userId?.trim();
     if (userId == null || userId.isEmpty) {
-      ToastHelper.showError('Chat is not available for this request.');
+      ToastHelper.showError('map.chat_unavailable'.tr);
       return;
     }
 
@@ -150,7 +195,7 @@ class MapCntrl extends GetxController {
       RouteNames.chatDetail,
       arguments: {
         'userId': userId,
-        'userName': request?.userName ?? 'Requestee',
+        'userName': request?.userName ?? 'map.requestee_fallback'.tr,
       },
     );
   }
@@ -170,7 +215,7 @@ class MapCntrl extends GetxController {
       if (permission == LocationPermission.deniedForever) {
         print(' Location permission denied forever! Opening app settings...');
         ToastHelper.showWarning(
-          'Location permission is required to refresh the map.',
+          'map.permission_message'.tr,
         );
         await Geolocator.openLocationSettings();
         return;
@@ -204,10 +249,12 @@ class MapCntrl extends GetxController {
         accuracy: LocationAccuracy.best,
         distanceFilter: 5,
         forceLocationManager: false,
-        timeLimit: Duration(seconds: 10),
       ),
     ).listen(
       (Position pos) async {
+        if (_isDisposed) {
+          return;
+        }
         // Filter out inaccurate readings
         if (pos.accuracy > 50) {
           print('⚠️ Low accuracy (${pos.accuracy}m) - skipping');
@@ -217,27 +264,59 @@ class MapCntrl extends GetxController {
         print(
           '📍 Stream device location: ${pos.latitude}, ${pos.longitude}, Accuracy: ${pos.accuracy}m',
         );
-        currentLatLng.value = LatLng(pos.latitude, pos.longitude);
-        await _scheduleRouteRefresh();
 
-        Future.microtask(() async {
-          try {
-            await mapRepo.updateCurrentLocation(
-              lat: pos.latitude,
-              long: pos.longitude,
-            );
-            await fetchMapUsers();
-            print(
-              "✅ Location sent to backend: ${pos.latitude}, ${pos.longitude}",
-            );
-          } catch (e) {
-            print("❌ Error sending location: $e");
+        // Project GPS onto the existing route so icon follows the road path
+        final rawPos = LatLng(pos.latitude, pos.longitude);
+        if (activeRequest.value != null && shortestPathPoints.length >= 2) {
+          final projected = projectOnRoute(rawPos, shortestPathPoints);
+          currentLatLng.value = projected.key;
+        } else {
+          currentLatLng.value = rawPos;
+        }
+
+        if (activeRequest.value != null) {
+          // Route must re-anchor at the TRUE GPS position so the path
+          // actually updates when the volunteer drives off the old route.
+          await _scheduleRouteRefresh(from: rawPos);
+        }
+
+        if (!_isDisposed) {
+          Future.microtask(() async {
+            try {
+              await mapRepo.updateCurrentLocation(
+                lat: pos.latitude,
+                long: pos.longitude,
+              );
+              await fetchMapUsers();
+            } catch (e) {
+              print(" Error sending location: $e");
+            }
+          });
+
+          if (isTracking.value &&
+              activeRequest.value?.sId != null &&
+              activeRequest.value!.sId!.trim().isNotEmpty) {
+            try {
+              final provider =
+                  Get.isRegistered<ChatProvider>()
+                      ? Get.find<ChatProvider>()
+                      : Get.put(ChatProvider());
+              provider.emitLocationUpdate(
+                latitude: pos.latitude,
+                longitude: pos.longitude,
+                requestId: activeRequest.value!.sId!.trim(),
+              );
+            } catch (_) {}
           }
-        });
+        }
       },
       onError: (e) {
-        print("❌ GPS Stream Error: $e");
+        print("❌ GPS Stream Error: $e, restarting in 3s...");
+        if (!_isDisposed) {
+          Future.delayed(const Duration(seconds: 3), _startPositionStream);
+        }
       },
+      cancelOnError: false,
     );
   }
 
@@ -298,10 +377,15 @@ class MapCntrl extends GetxController {
     _storage.removeData(_activeRequestStorageKey);
   }
 
-  Future<void> _scheduleRouteRefresh({bool force = false}) async {
-    final from = currentLatLng.value;
+  //Fetch dobra karna chaiye ya nahi
+
+  Future<void> _scheduleRouteRefresh({
+    bool force = false,
+    LatLng? from,
+  }) async {
+    final routeFrom = from ?? currentLatLng.value;
     final to = activeRequestLatLng;
-    if (from == null || to == null) {
+    if (routeFrom == null || to == null) {
       shortestPathPoints.clear();
       return;
     }
@@ -313,10 +397,11 @@ class MapCntrl extends GetxController {
       final now = DateTime.now();
       final recentFetch =
           _lastRouteFetchAt != null &&
-          now.difference(_lastRouteFetchAt!) < const Duration(seconds: 12);
+          now.difference(_lastRouteFetchAt!) < const Duration(seconds: 8);
       final movedEnough =
           _lastRouteFetchFrom != null &&
-          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, from) > 35;
+          const Distance().as(LengthUnit.Meter, _lastRouteFetchFrom!, routeFrom) >
+              20;
       if (recentFetch && !movedEnough) {
         return;
       }
@@ -324,20 +409,31 @@ class MapCntrl extends GetxController {
 
     _isFetchingRoute = true;
     try {
-      final route = await _fetchShortestPath(from: from, to: to);
+      final route = await _fetchShortestPath(from: routeFrom, to: to);
+      // Guard: if request was cancelled during fetch, discard result
+      if (activeRequest.value == null || currentLatLng.value == null) {
+        shortestPathPoints.clear();
+        return;
+      }
       if (route.length >= 2) {
         shortestPathPoints.assignAll(route);
       } else {
-        shortestPathPoints.assignAll([from, to]);
+        shortestPathPoints.assignAll([routeFrom, to]);
       }
       _lastRouteFetchAt = DateTime.now();
-      _lastRouteFetchFrom = from;
+      _lastRouteFetchFrom = routeFrom;
     } catch (_) {
-      shortestPathPoints.assignAll([from, to]);
+      if (activeRequest.value == null) {
+        shortestPathPoints.clear();
+        return;
+      }
+      shortestPathPoints.assignAll([routeFrom, to]);
     } finally {
       _isFetchingRoute = false;
     }
   }
+
+  //Shortest driving path api through osm
 
   Future<List<LatLng>> _fetchShortestPath({
     required LatLng from,
@@ -402,7 +498,144 @@ class MapCntrl extends GetxController {
 
     return points;
   }
+  // ---- Route path helpers ----
 
+  /// Project a point onto a polyline and return the interpolated position
+  /// along with the cumulative distance (in meters) from the start.
+  static MapEntry<LatLng, double> projectOnRoute(
+    LatLng point,
+    List<LatLng> polyline,
+  ) {
+    if (polyline.length < 2) return MapEntry(point, 0);
+
+    int segIdx = 0;
+    double segT = 0.0;
+    double minDistSq = double.infinity;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final a = polyline[i];
+      final b = polyline[i + 1];
+      final dx = b.longitude - a.longitude;
+      final dy = b.latitude - a.latitude;
+      final lenSq = dx * dx + dy * dy;
+
+      double t;
+      if (lenSq == 0) {
+        t = 0;
+      } else {
+        t =
+            ((point.longitude - a.longitude) * dx +
+                (point.latitude - a.latitude) * dy) /
+            lenSq;
+        t = t.clamp(0.0, 1.0);
+      }
+
+      final projLng = a.longitude + t * dx;
+      final projLat = a.latitude + t * dy;
+      final dLng = point.longitude - projLng;
+      final dLat = point.latitude - projLat;
+      final distSq = dLng * dLng + dLat * dLat;
+
+      if (distSq < minDistSq) {
+        minDistSq = distSq;
+        segIdx = i;
+        segT = t;
+      }
+    }
+
+    double dist = 0;
+    for (int i = 0; i < segIdx; i++) {
+      dist += const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
+    }
+    final segDist = const Distance().as(
+      LengthUnit.Meter,
+      polyline[segIdx],
+      polyline[segIdx + 1],
+    );
+    dist += segDist * segT;
+
+    final projLng2 =
+        polyline[segIdx].longitude +
+        (polyline[segIdx + 1].longitude - polyline[segIdx].longitude) * segT;
+    final projLat2 =
+        polyline[segIdx].latitude +
+        (polyline[segIdx + 1].latitude - polyline[segIdx].latitude) * segT;
+
+    return MapEntry(LatLng(projLat2, projLng2), dist);
+  }
+
+  /// Get a point along a polyline at a given cumulative distance from start.
+  static LatLng pointAtDistOnRoute(List<LatLng> polyline, double targetDist) {
+    if (polyline.length < 2) {
+      return polyline.isNotEmpty ? polyline.first : LatLng(0, 0);
+    }
+    if (targetDist <= 0) return polyline.first;
+
+    double accumulated = 0;
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final segDist = const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
+      if (accumulated + segDist >= targetDist) {
+        final t = segDist > 0 ? (targetDist - accumulated) / segDist : 0;
+        return LatLng(
+          polyline[i].latitude +
+              (polyline[i + 1].latitude - polyline[i].latitude) * t,
+          polyline[i].longitude +
+              (polyline[i + 1].longitude - polyline[i].longitude) * t,
+        );
+      }
+      accumulated += segDist;
+    }
+    return polyline.last;
+  }
+
+  /// Truncate a polyline to only keep points from the given distance onward.
+  static List<LatLng> truncatePolylineFromDist(
+    List<LatLng> polyline,
+    double fromDist,
+  ) {
+    if (polyline.length < 2 || fromDist <= 0) return List.from(polyline);
+
+    final result = <LatLng>[];
+    double accumulated = 0;
+    bool added = false;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final segDist = const Distance().as(
+        LengthUnit.Meter,
+        polyline[i],
+        polyline[i + 1],
+      );
+      if (accumulated + segDist >= fromDist && !added) {
+        final t = segDist > 0 ? (fromDist - accumulated) / segDist : 0;
+        result.add(
+          LatLng(
+            polyline[i].latitude +
+                (polyline[i + 1].latitude - polyline[i].latitude) * t,
+            polyline[i].longitude +
+                (polyline[i + 1].longitude - polyline[i].longitude) * t,
+          ),
+        );
+        added = true;
+      }
+      if (added) {
+        result.add(polyline[i + 1]);
+      }
+      accumulated += segDist;
+    }
+
+    if (result.isEmpty && polyline.isNotEmpty) result.add(polyline.last);
+    return result;
+  }
+
+  //completion pay count++ karta hai
   void _refreshVolunteerDashboard({bool completed = false}) {
     if (!Get.isRegistered<HomeController>()) {
       return;

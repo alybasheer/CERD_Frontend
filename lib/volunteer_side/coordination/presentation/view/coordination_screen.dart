@@ -24,9 +24,9 @@ class CoordinationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Coordination',
-        subtitle: 'Contacts and active support chats',
+      appBar: WeHelpAppBar(
+        title: 'coordination.title'.tr,
+        subtitle: 'coordination.subtitle'.tr,
         showBack: true,
       ),
       body: SafeArea(
@@ -38,7 +38,7 @@ class CoordinationScreen extends StatelessWidget {
                 controller: controller.searchController,
                 onChanged: controller.updateSearch,
                 decoration: InputDecoration(
-                  hintText: 'Search contacts...',
+                  hintText: 'coordination.search_contacts'.tr,
                   prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),
@@ -52,16 +52,16 @@ class CoordinationScreen extends StatelessWidget {
                 child: SegmentedButton<int>(
                   style: ButtonStyle(visualDensity: VisualDensity.compact),
                   selectedIcon: const Icon(Icons.check_rounded, size: 16),
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: 0,
-                      label: Text('Requestees'),
-                      icon: Icon(Icons.support_agent_rounded),
+                      label: Text('coordination.tab_requestees'.tr),
+                      icon: const Icon(Icons.support_agent_rounded),
                     ),
                     ButtonSegment(
                       value: 1,
-                      label: Text('Volunteers'),
-                      icon: Icon(Icons.groups_rounded),
+                      label: Text('coordination.tab_volunteers'.tr),
+                      icon: const Icon(Icons.groups_rounded),
                     ),
                   ],
                   selected: {controller.selectedTab.value},
@@ -91,8 +91,8 @@ class CoordinationScreen extends StatelessWidget {
                   return Center(
                     child: Text(
                       controller.requestMode.value
-                          ? 'No accepted volunteer chat yet'
-                          : 'No coordination contacts yet',
+                          ? 'coordination.no_volunteer_chat'.tr
+                          : 'coordination.no_contacts'.tr,
                       style: AppTextStyling.body_14M.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),

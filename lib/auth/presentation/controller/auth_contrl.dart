@@ -5,8 +5,10 @@ import 'package:fyp_source_code/auth/data/models/signin_model.dart';
 import 'package:fyp_source_code/auth/data/repo/login-_repo.dart';
 import 'package:fyp_source_code/auth/data/repo/signup_repo.dart';
 import 'package:fyp_source_code/network/api_service.dart';
+import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
 import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:fyp_source_code/services/api_names.dart';
+import 'package:fyp_source_code/services/auth_service.dart';
 import 'package:fyp_source_code/utilities/helpers/toast_helper.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:fyp_source_code/utilities/validators/validators.dart';
@@ -80,7 +82,7 @@ class AuthController extends GetxController {
   // ============ CONFIRM PASSWORD VALIDATION ============
   String? validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
-      confirmPasswordError.value = 'Please confirm your password';
+      confirmPasswordError.value = 'auth.error.confirm_password'.tr;
       return confirmPasswordError.value;
     }
 
@@ -119,7 +121,7 @@ class AuthController extends GetxController {
   // ============ LOGIN ============
   Future<void> onLogin() async {
     if (!loginFormKey.currentState!.validate()) {
-      ToastHelper.showError('Please fix the errors above');
+      ToastHelper.showError('auth.error.fix_errors'.tr);
       return;
     }
 
@@ -134,7 +136,7 @@ class AuthController extends GetxController {
       // Create login request
       loginModel.user = User(
         email: emailController.text.trim(),
-        password: passController.text,
+        password: passController.text.trim(),
       );
 
       // Call API
@@ -185,22 +187,24 @@ class AuthController extends GetxController {
         );
       }
 
-      // Debug logs
-      print('✅ Login successful');
-      print('Token: ${StorageHelper().readData('token')}');
-      print('Email: ${StorageHelper().readData('email')}');
-      print('Role: ${StorageHelper().readData('role')}');
-
       // Show success message
-      ToastHelper.showSuccess('Login successful!');
+      ToastHelper.showSuccess('auth.success.login'.tr);
 
       // Navigate based on the backend account role, not the chosen app mode.
+      // Mark login as in-progress so the 401 handler won't wipe the fresh
+      // session if a post-login API call (requestee status check) fails.
+      DioHelper.loginInProgress = true;
       Future.delayed(Duration(milliseconds: 500), () async {
         await _navigateAfterLogin(resp.user!);
+        // Reset the flag only AFTER the first frame renders, so any
+        // post-login API calls (refreshDashboard) that return 401 won't
+        // trigger "Session expired" toast.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          DioHelper.loginInProgress = false;
+        });
       });
     } catch (e) {
-      print('❌ Login error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -209,13 +213,13 @@ class AuthController extends GetxController {
   // ============ REGISTER ============
   Future<void> onRegisterClick() async {
     if (!registerFormKey.currentState!.validate()) {
-      ToastHelper.showError('Please fix the errors above');
+      ToastHelper.showError('auth.error.fix_errors'.tr);
       return;
     }
 
     // Validate confirm password matches
-    if (passController.text != confirmPassController.text) {
-      ToastHelper.showError('Passwords do not match');
+    if (passController.text.trim() != confirmPassController.text.trim()) {
+      ToastHelper.showError('auth.error.passwords_mismatch'.tr);
       return;
     }
 
@@ -226,10 +230,8 @@ class AuthController extends GetxController {
       signupModel.user = User(
         username: usernameController.text.trim(),
         email: emailController.text.trim(),
-        password: passController.text,
+        password: passController.text.trim(),
       );
-
-      print('📤 Register payload: ${signupModel.toJson()}');
 
       // Call API
       final resp = await RegisterRepo().postData(signupModel);
@@ -275,18 +277,44 @@ class AuthController extends GetxController {
         );
       }
 
-      print('✅ Registration successful');
-
       // Show success message
-      ToastHelper.showSuccess('Account created successfully!');
+      ToastHelper.showSuccess('auth.success.register'.tr);
 
       // Navigate to role selection
       Future.delayed(Duration(milliseconds: 500), () {
         Get.offAllNamed(RouteNames.roleSelection);
       });
     } catch (e) {
-      print('❌ Register error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============ GOOGLE SIGN-IN ============
+  Future<void> signInWithGoogle() async {
+    isLoading.value = true;
+
+    try {
+      final result = await AuthService().signInWithGoogle();
+
+      if (result['success'] == true) {
+        final model = result['data'] as SignupModel;
+        ToastHelper.showSuccess('auth.success.google'.tr);
+        DioHelper.loginInProgress = true;
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          await _navigateAfterLogin(model.user!);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            DioHelper.loginInProgress = false;
+          });
+        });
+      } else {
+        ToastHelper.showError(
+          (result['message'] as String?) ?? 'auth.error.google_failed'.tr,
+        );
+      }
+    } catch (e) {
+      ToastHelper.showErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -315,19 +343,23 @@ class AuthController extends GetxController {
   // ============ LOGOUT ============
   Future<void> logout() async {
     try {
+      if (Get.isRegistered<TrackingController>()) {
+        Get.find<TrackingController>().stopTracking();
+        Get.delete<TrackingController>(force: true);
+      }
+      await AuthService().signOut();
       StorageHelper().clearSessionData();
       userRole.value = '';
       clearLoginForm();
       clearRegisterForm();
       Get.offAllNamed(RouteNames.login);
-    } catch (e) {
-      print('Logout error: $e');
+    } catch (_) {
+      Get.offAllNamed(RouteNames.login);
     }
   }
 
   Future<void> _navigateAfterLogin(User signedInUser) async {
     final role = signedInUser.role?.toLowerCase().trim() ?? 'user';
-    print('Navigating user with backend role: $role');
 
     if (role == 'admin') {
       Get.offAllNamed(RouteNames.adminPanel);
@@ -351,7 +383,7 @@ class AuthController extends GetxController {
     if (status.hasApplication && status.isApproved) {
       StorageHelper().saveData('verificationStatus', status.status);
       ToastHelper.showSuccess(
-        'Your volunteer approval is ready. Please log in again.',
+        'auth.volunteer.approved_relogin'.tr,
       );
       await logout();
       return;
@@ -370,7 +402,7 @@ class AuthController extends GetxController {
   Future<_VolunteerStatusSnapshot> _fetchVolunteerStatusSnapshot() async {
     try {
       final response = await DioHelper().get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
       return _VolunteerStatusSnapshot.fromResponse(response);

@@ -33,16 +33,11 @@ class WaitingScreenController extends GetxController {
   /// Check verification status from backend
   Future<void> _checkVerificationStatus() async {
     try {
-      print('🔍 Fetching verification status from backend...');
-
       // Fetch status from backend API
       final response = await _dioHelper.get(
-        url: ApiNames.volunteerStatus,
+        url: ApiNames.getvolunteerStats,
         isauthorize: true,
       );
-
-      print('📦 Backend Response: $response');
-      print('📦 Response Type: ${response.runtimeType}');
 
       // Extract status from response
       String currentStatus = 'pending';
@@ -54,23 +49,19 @@ class WaitingScreenController extends GetxController {
           final data = Map<String, dynamic>.from(responseMap['data']);
           if (data.containsKey('status')) {
             currentStatus = data['status'].toString().toLowerCase();
-            print('✅ Found status in nested data: $currentStatus');
           }
         }
         // Check for direct status field
         else if (responseMap.containsKey('status')) {
           currentStatus = responseMap['status'].toString().toLowerCase();
-          print('✅ Found direct status field: $currentStatus');
         }
         // Check for verificationStatus field
         else if (responseMap.containsKey('verificationStatus')) {
           currentStatus =
               responseMap['verificationStatus'].toString().toLowerCase();
-          print('✅ Found verificationStatus field: $currentStatus');
         }
       }
 
-      print('📊 Current Status from Backend: $currentStatus');
       verificationStatus.value = currentStatus;
 
       // Update storage with latest status from backend
@@ -92,12 +83,10 @@ class WaitingScreenController extends GetxController {
       } else {
         isApproved.value = false;
         isRejected.value = false;
-        print('⏳ Status still pending... ($currentStatus)');
       }
 
       isChecking.value = false;
     } catch (e) {
-      print('❌ Error checking verification status: $e');
       isChecking.value = false;
       // On error, keep polling - don't stop
     }
@@ -105,9 +94,8 @@ class WaitingScreenController extends GetxController {
 
   /// Handle approved status
   void _handleApproved() {
-    print('✅ Verification approved!');
     ToastHelper.showSuccess(
-      'Your application has been approved. Please log in again to refresh your volunteer access.',
+      'verification.approved_toast'.tr,
     );
 
     // Stop polling
@@ -122,9 +110,8 @@ class WaitingScreenController extends GetxController {
 
   /// Handle rejected status
   void _handleRejected() {
-    print('❌ Verification rejected!');
     ToastHelper.showError(
-      'Your application was not approved. Please try again later or contact support.',
+      'verification.rejected_toast'.tr,
     );
 
     // Stop polling
@@ -142,7 +129,6 @@ class WaitingScreenController extends GetxController {
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
-    print('🛑 Polling stopped');
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/splash_onboardings/presentation/controller/splash_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -58,6 +59,10 @@ class _SplashScreenProfessionalState extends State<SplashScreenProfessional>
         child: Stack(
           children: [
             _BackgroundLogo(isDark: isDark),
+            const Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: LanguageCapsule(),
+            ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSize.l),
               child: Column(
@@ -171,7 +176,7 @@ class _SplashIdentity extends StatelessWidget {
         ),
         SizedBox(height: AppSize.lH),
         Text(
-          'CERD Community',
+          'splash.brand'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.title_30M.copyWith(
             color: scheme.primary,
@@ -181,7 +186,7 @@ class _SplashIdentity extends StatelessWidget {
         ),
         SizedBox(height: AppSize.xsH),
         Text(
-          'Community support when it matters',
+          'splash.tagline'.tr,
           textAlign: TextAlign.center,
           style: AppTextStyling.body_14M.copyWith(
             color: scheme.onSurfaceVariant,
@@ -277,7 +282,7 @@ class _SosBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'SOS',
+            'onboarding.badge.sos'.tr,
             style: AppTextStyling.body_12S.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w900,
@@ -336,13 +341,13 @@ class _SplashFooter extends StatelessWidget {
   String _getStatusMessage(UserStatus status) {
     switch (status) {
       case UserStatus.notAuthenticated:
-        return 'Preparing CERD Community...';
+        return 'splash.status.preparing'.tr;
       case UserStatus.authenticated:
-        return 'Loading your profile...';
+        return 'splash.status.loading_profile'.tr;
       case UserStatus.pending:
-        return 'Checking your verification status...';
+        return 'splash.status.checking_verification'.tr;
       case UserStatus.verified:
-        return 'Opening your volunteer dashboard...';
+        return 'splash.status.opening_dashboard'.tr;
     }
   }
 }

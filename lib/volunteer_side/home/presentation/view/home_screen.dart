@@ -15,6 +15,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
+    // final reqContrl = Get.put()
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -25,7 +26,8 @@ class HomeScreen extends StatelessWidget {
               slivers: [
                 sliverAppBar(
                   completedCount: controller.completedCount.value,
-                  rating: controller.volunteerRating.value,
+              rating: controller.volunteerRating.value,
+                  ratingCount: controller.volunteerRatingCount.value,
                   fullName: controller.fullName.value,
                   locationName: controller.locationName.value,
                 ),
@@ -42,6 +44,7 @@ class HomeScreen extends StatelessWidget {
               sliverAppBar(
                 completedCount: controller.completedCount.value,
                 rating: controller.volunteerRating.value,
+                ratingCount: controller.volunteerRatingCount.value,
                 fullName: controller.fullName.value,
                 locationName: controller.locationName.value,
               ),

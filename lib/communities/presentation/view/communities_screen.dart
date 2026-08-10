@@ -5,6 +5,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/empty_state.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
 import 'package:get/get.dart';
 
@@ -19,9 +20,9 @@ class CommunitiesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Community',
-        subtitle: 'Volunteer groups and local tasks',
+      appBar: WeHelpAppBar(
+        title: 'communities.title'.tr,
+        subtitle: 'communities.subtitle'.tr,
         showBack: true,
       ),
       body: Column(
@@ -33,9 +34,10 @@ class CommunitiesScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: AppSize.m),
                 children: [
-                  _filterChip(controller, null, 'All'),
+                  _filterChip(controller, null, 'communities.filter_all'.tr),
                   ...controller.categories.map(
-                    (category) => _filterChip(controller, category, category),
+                    (category) =>
+                        _filterChip(controller, category, _categoryLabel(category)),
                   ),
                 ],
               ),
@@ -67,13 +69,11 @@ class CommunitiesScreen extends StatelessWidget {
       );
     }
     if (controller.communities.isEmpty) {
-      return Center(
-        child: Text(
-          'No community requests',
-          style: AppTextStyling.body_14M.copyWith(
-            color: Get.theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+      return EmptyStateView(
+        icon: Icons.groups_rounded,
+        title: 'communities.no_requests'.tr,
+        subtitle: 'communities.no_requests_hint'.tr,
+        onRetry: controller.fetchCommunities,
       );
     }
 
@@ -123,22 +123,25 @@ class CommunitiesScreen extends StatelessWidget {
               children: [
                 TextField(
                   controller: controller.titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
+                  decoration: InputDecoration(labelText: 'communities.create_title'.tr),
                 ),
                 TextField(
                   controller: controller.detailsController,
                   minLines: 2,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Details'),
+                  decoration: InputDecoration(labelText: 'communities.create_details'.tr),
                 ),
                 Obx(
                   () => DropdownButtonFormField<String>(
                     value: controller.selectedCategory.value,
-                    decoration: const InputDecoration(labelText: 'Category'),
+                    decoration: InputDecoration(labelText: 'communities.create_category'.tr),
                     items:
                         controller.categories
                             .map(
-                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(_categoryLabel(e)),
+                              ),
                             )
                             .toList(),
                     onChanged:
@@ -147,17 +150,17 @@ class CommunitiesScreen extends StatelessWidget {
                 ),
                 TextField(
                   controller: controller.timeNeededController,
-                  decoration: const InputDecoration(labelText: 'Time needed'),
+                  decoration: InputDecoration(labelText: 'communities.create_time'.tr),
                 ),
                 TextField(
                   controller: controller.locationNameController,
-                  decoration: const InputDecoration(labelText: 'Location name'),
+                  decoration: InputDecoration(labelText: 'communities.create_location'.tr),
                 ),
                 TextField(
                   controller: controller.peopleRequiredController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'People required',
+                  decoration: InputDecoration(
+                    labelText: 'communities.create_people'.tr,
                   ),
                 ),
                 SizedBox(height: AppSize.mH),
@@ -172,8 +175,8 @@ class CommunitiesScreen extends StatelessWidget {
                       icon: const Icon(Icons.publish),
                       label: Text(
                         controller.isSubmitting.value
-                            ? 'Publishing...'
-                            : 'Publish',
+                            ? 'common.publishing'.tr
+                            : 'common.publish'.tr,
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.steelBlue,
@@ -242,7 +245,7 @@ class _CommunityCard extends StatelessWidget {
           ),
           SizedBox(height: AppSize.sH),
           Text(
-            '${community.category} - ${community.locationName}',
+            '${_categoryLabel(community.category)} - ${community.locationName}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTextStyling.body_12S.copyWith(
@@ -257,25 +260,25 @@ class _CommunityCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => controller.joinCommunity(community),
                   icon: const Icon(Icons.group_add),
-                  label: const Text('Join'),
+                  label: Text('common.join'.tr),
                 ),
               if (controller.canChat(community))
                 OutlinedButton.icon(
                   onPressed: () => _showMessages(controller, community),
                   icon: const Icon(Icons.chat),
-                  label: const Text('Chat'),
+                  label: Text('common.chat'.tr),
                 ),
               if (controller.canManage(community))
                 OutlinedButton.icon(
                   onPressed: () => controller.startCommunity(community),
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start'),
+                  label: Text('common.start'.tr),
                 ),
               if (controller.canManage(community))
                 OutlinedButton.icon(
                   onPressed: () => controller.deleteCommunity(community),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Delete'),
+                  label: Text('common.delete'.tr),
                 ),
             ],
           ),
@@ -328,7 +331,7 @@ class _CommunityCard extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: controller.messageController,
-                      decoration: const InputDecoration(hintText: 'Message'),
+                      decoration: InputDecoration(hintText: 'communities.message_hint'.tr),
                     ),
                   ),
                   IconButton(
@@ -344,5 +347,22 @@ class _CommunityCard extends StatelessWidget {
       ),
       isScrollControlled: true,
     );
+  }
+}
+
+String _categoryLabel(String category) {
+  switch (category) {
+    case 'Natural Disaster':
+      return 'community.form.cat_natural_disaster'.tr;
+    case 'Medical':
+      return 'community.form.cat_medical'.tr;
+    case 'Accident':
+      return 'community.form.cat_accident'.tr;
+    case 'Shelter':
+      return 'community.form.cat_shelter'.tr;
+    case 'Other':
+      return 'community.form.cat_other'.tr;
+    default:
+      return category;
   }
 }

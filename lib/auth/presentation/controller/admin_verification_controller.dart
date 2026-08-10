@@ -150,8 +150,7 @@ class AdminVerificationController extends GetxController {
          StorageHelper().saveData('verificationStatus', submission.status ?? 'pending');
       });
     } catch (e) {
-      print('❌ Verification error: $e');
-      ToastHelper.showError(e.toString().replaceAll('Exception: ', ''));
+      ToastHelper.showErrorMessage(e);
     } finally {
       isSubmitting.value = false;
     }

@@ -20,9 +20,9 @@ class VolunteerVerficationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Volunteer Verification',
-        subtitle: 'Submit your details for admin review',
+      appBar: WeHelpAppBar(
+        title: 'verification.title'.tr,
+        subtitle: 'verification.subtitle'.tr,
         showBack: true,
       ),
       bottomNavigationBar: SafeArea(
@@ -31,7 +31,7 @@ class VolunteerVerficationScreen extends StatelessWidget {
           () => VerificationSubmitButton(
             isLoading: controller.isSubmitting.value,
             onPressed: controller.submitVerification,
-            label: 'Submit for Verification',
+            label: 'verification.submit_btn'.tr,
           ),
         ),
       ),
@@ -46,25 +46,25 @@ class VolunteerVerficationScreen extends StatelessWidget {
                 _IntroPanel(scheme: scheme),
                 AppSize.lHeight,
                 _SectionTitle(
-                  title: 'Account',
-                  subtitle: 'This email is attached to your login session.',
+                  title: 'verification.section_account'.tr,
+                  subtitle: 'verification.section_account_sub'.tr,
                 ),
                 _ReadOnlyInfoField(
-                  label: 'Account Email',
+                  label: 'verification.account_email'.tr,
                   value: controller.emailController.text,
                   icon: Icons.email_outlined,
                 ),
                 AppSize.xxlHeight,
                 _SectionTitle(
-                  title: 'Identity Documents',
+                  title: 'verification.section_identity'.tr,
                   subtitle:
-                      'CNIC front and back are required. Profile photo is optional.',
+                      'verification.section_identity_sub'.tr,
                 ),
                 Obx(
                   () => VerificationImagePicker(
-                    label: 'CNIC Front',
+                    label: 'verification.cnic_front_label'.tr,
                     helperText:
-                        'Upload a clear front-side image of your national ID card.',
+                        'verification.cnic_front_helper'.tr,
                     isRequired: true,
                     imageBytes: controller.cnicFrontPhoto.value?.bytes,
                     fileName: controller.cnicFrontPhoto.value?.name,
@@ -74,9 +74,9 @@ class VolunteerVerficationScreen extends StatelessWidget {
                 ),
                 Obx(
                   () => VerificationImagePicker(
-                    label: 'CNIC Back',
+                    label: 'verification.cnic_back_label'.tr,
                     helperText:
-                        'Upload the back-side image so admin can verify the document properly.',
+                        'verification.cnic_back_helper'.tr,
                     isRequired: true,
                     imageBytes: controller.cnicBackPhoto.value?.bytes,
                     fileName: controller.cnicBackPhoto.value?.name,
@@ -86,9 +86,9 @@ class VolunteerVerficationScreen extends StatelessWidget {
                 ),
                 Obx(
                   () => VerificationImagePicker(
-                    label: 'Profile Photo',
+                    label: 'verification.profile_photo_label'.tr,
                     helperText:
-                        'Optional. If added, it will appear as your volunteer profile avatar.',
+                        'verification.profile_photo_helper'.tr,
                     imageBytes: controller.profilePhoto.value?.bytes,
                     fileName: controller.profilePhoto.value?.name,
                     onTap: controller.pickProfilePhoto,
@@ -103,14 +103,14 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   ),
                 ),
                 AppSize.xxlHeight,
-                const _SectionTitle(
-                  title: 'Personal Details',
+                _SectionTitle(
+                  title: 'verification.section_personal'.tr,
                   subtitle:
-                      'Use the same details that appear on your verification documents.',
+                      'verification.section_personal_sub'.tr,
                 ),
-                VerificationTextField(
-                  label: 'Full Name',
-                  hintText: 'Enter your full name',
+                 VerificationTextField(
+                  label: 'verification.full_name'.tr,
+                  hintText: 'verification.full_name_hint'.tr,
                   controller: controller.fullNameController,
                   validator: controller.validateFullName,
                   keyboardType: TextInputType.name,
@@ -120,8 +120,8 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   ],
                 ),
                 VerificationTextField(
-                  label: 'Area of Expertise',
-                  hintText: 'Medical, Search & Rescue, Logistics',
+                  label: 'verification.expertise'.tr,
+                  hintText: 'verification.expertise_hint'.tr,
                   controller: controller.expertiseController,
                   validator: controller.validateExpertise,
                   keyboardType: TextInputType.text,
@@ -133,8 +133,8 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   ],
                 ),
                 VerificationTextField(
-                  label: 'CNIC Number',
-                  hintText: 'XXXXX-XXXXXXX-X',
+                  label: 'verification.cnic_number'.tr,
+                  hintText: 'verification.cnic_hint'.tr,
                   controller: controller.cnicController,
                   validator: controller.validateCNIC,
                   keyboardType: TextInputType.number,
@@ -144,10 +144,10 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   ],
                 ),
                 AppSize.xxlHeight,
-                const _SectionTitle(
-                  title: 'Live Location',
+                _SectionTitle(
+                  title: 'verification.section_location'.tr,
                   subtitle:
-                      'Add your current area so admin can verify availability and nearby response coverage.',
+                      'verification.section_location_sub'.tr,
                 ),
                 Obx(
                   () => _CurrentLocationButton(
@@ -160,8 +160,8 @@ class VolunteerVerficationScreen extends StatelessWidget {
                 ),
                 AppSize.mHeight,
                 VerificationTextField(
-                  label: 'City',
-                  hintText: 'Enter your city',
+                  label: 'verification.city'.tr,
+                  hintText: 'verification.city_hint'.tr,
                   controller: controller.cityController,
                   validator: controller.validateCity,
                   keyboardType: TextInputType.text,
@@ -171,8 +171,8 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   ],
                 ),
                 VerificationTextField(
-                  label: 'Location / Address',
-                  hintText: 'Enter your detailed location',
+                  label: 'verification.location_address'.tr,
+                  hintText: 'verification.location_hint'.tr,
                   controller: controller.locationController,
                   validator: controller.validateLocation,
                   keyboardType: TextInputType.text,
@@ -192,7 +192,7 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(top: 2, bottom: 14),
                     child: Text(
-                      'GPS attached: ${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
+                      '${'verification.gps_attached'.tr}: ${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
                       style: AppTextStyling.body_12S.copyWith(
                         color: AppColors.reliefGreen,
                         fontWeight: FontWeight.w700,
@@ -201,14 +201,14 @@ class VolunteerVerficationScreen extends StatelessWidget {
                   );
                 }),
                 AppSize.xxlHeight,
-                const _SectionTitle(
-                  title: 'Motivation',
+                _SectionTitle(
+                  title: 'verification.section_motivation'.tr,
                   subtitle:
-                      'Briefly explain your skills and how you can support people.',
+                      'verification.section_motivation_sub'.tr,
                 ),
                 VerificationTextField(
-                  label: 'Why do you want to volunteer?',
-                  hintText: 'Share your motivation and how you can help.',
+                  label: 'verification.why_volunteer'.tr,
+                  hintText: 'verification.why_volunteer_hint'.tr,
                   controller: controller.descriptionController,
                   validator: controller.validateDescription,
                   keyboardType: TextInputType.multiline,
@@ -262,7 +262,7 @@ class _IntroPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Verify your identity',
+                  'verification.intro_title'.tr,
                   maxLines: 2,
                   style: AppTextStyling.title_18M.copyWith(
                     color: AppColors.safetyBlue,
@@ -271,7 +271,7 @@ class _IntroPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Upload CNIC front/back, add your current location, and submit for admin review.',
+                  'verification.intro_description'.tr,
                   style: AppTextStyling.body_12S.copyWith(
                     color: scheme.onSurfaceVariant,
                     height: 1.4,
@@ -347,7 +347,7 @@ class _UploadProgress extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$readyCount/2 required CNIC images selected',
+              'verification.upload_progress'.trParams({'count': readyCount.toString()}),
               style: AppTextStyling.body_12S.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -392,10 +392,10 @@ class _CurrentLocationButton extends StatelessWidget {
                 ),
         label: Text(
           isLoading
-              ? 'Detecting location...'
+              ? 'verification.detecting_location'.tr
               : hasCoordinates
-              ? 'Update Current Location'
-              : 'Use Current Location',
+              ? 'verification.update_location'.tr
+              : 'verification.use_location'.tr,
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor:
@@ -458,7 +458,7 @@ class _ReadOnlyInfoField extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  value.trim().isEmpty ? 'No email found' : value.trim(),
+                  value.trim().isEmpty ? 'verification.no_email'.tr : value.trim(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyling.body_14M.copyWith(

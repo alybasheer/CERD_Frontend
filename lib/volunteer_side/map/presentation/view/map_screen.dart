@@ -21,10 +21,20 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen>
+    with SingleTickerProviderStateMixin {
   late final MapCntrl mapCntrl;
   final flutterMapController = MapController();
   String? _lastCameraTarget;
+
+  late final AnimationController _animController;
+  LatLng? _smoothLatLng;
+  LatLng? _smoothTarget;
+
+  // Route-following animation state
+  List<LatLng>? _animRoute;
+  double _animFromDist = 0;
+  double _animToDist = 0;
 
   @override
   void initState() {
@@ -34,6 +44,98 @@ class _MapScreenState extends State<MapScreen> {
             ? Get.find<MapCntrl>()
             : Get.put(MapCntrl(), permanent: true);
     mapCntrl.setActiveRequestFromArguments(Get.arguments);
+
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animController.addListener(_onAnimate);
+    _animController.addStatusListener(_onAnimComplete);
+
+    ever(mapCntrl.currentLatLng, _onNewLocation);
+  }
+
+  void _onAnimComplete(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      // Truncate the route behind the icon after animation finishes
+      final route = mapCntrl.shortestPathPoints;
+      if (route.length >= 2 && _smoothLatLng != null) {
+        final projected = MapCntrl.projectOnRoute(_smoothLatLng!, route);
+        if (projected.value > 0) {
+          final truncated = MapCntrl.truncatePolylineFromDist(
+            route,
+            projected.value,
+          );
+          if (truncated.length >= 2) {
+            mapCntrl.shortestPathPoints.assignAll(truncated);
+          }
+        }
+      }
+      _animRoute = null;
+    }
+  }
+
+  void _onNewLocation(LatLng? newLoc) {
+    if (newLoc == null) {
+      _smoothLatLng = null;
+      _smoothTarget = null;
+      _animRoute = null;
+      return;
+    }
+    if (_animController.isAnimating) {
+      return;
+    }
+
+    _smoothTarget = newLoc;
+    final from = _smoothLatLng ?? newLoc;
+    if (from == newLoc) {
+      return;
+    }
+
+    // Snapshot the current route for animating along it
+    final route = mapCntrl.shortestPathPoints;
+    if (route.length >= 2) {
+      _animRoute = List.from(route);
+      _animFromDist = MapCntrl.projectOnRoute(from, _animRoute!).value;
+      _animToDist = MapCntrl.projectOnRoute(newLoc, _animRoute!).value;
+    } else {
+      _animRoute = null;
+    }
+
+    _animController.reset();
+    _animController.forward();
+  }
+
+  void _onAnimate() {
+    final eased = _easeInOutCubic(_animController.value);
+
+    if (_animRoute != null && _animRoute!.length >= 2) {
+      // Animate along the route polyline
+      final currentDist = _animFromDist + (_animToDist - _animFromDist) * eased;
+      _smoothLatLng = MapCntrl.pointAtDistOnRoute(_animRoute!, currentDist);
+    } else {
+      // Fallback: straight-line interpolation
+      final from = _smoothLatLng;
+      final to = _smoothTarget;
+      if (from == null || to == null) return;
+      _smoothLatLng = LatLng(
+        from.latitude + (to.latitude - from.latitude) * eased,
+        from.longitude + (to.longitude - from.longitude) * eased,
+      );
+    }
+    setState(() {});
+  }
+
+  static double _easeInOutCubic(double t) {
+    return t < 0.5
+        ? 4 * t * t * t
+        : 1 - (-2 * t + 2) * (-2 * t + 2) * (-2 * t + 2) / 2;
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   @override
@@ -41,12 +143,16 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: WeHelpAppBar(
-        title: 'Emergency Map',
-        subtitle: 'Nearby volunteers and live position',
+        title: 'map.title'.tr,
+        subtitle: 'map.subtitle'.tr,
         showBack: Get.currentRoute == RouteNames.map,
       ),
       body: Obx(() {
-        final latlng = mapCntrl.currentLatLng.value;
+        // Keep smooth position in sync when not animating
+        if (!_animController.isAnimating) {
+          _smoothLatLng = mapCntrl.currentLatLng.value;
+        }
+        final latlng = _smoothLatLng;
         final activeRequest = mapCntrl.activeRequest.value;
         final activeRequestLocation = mapCntrl.activeRequestLatLng;
         final routePoints = mapCntrl.activeRoutePoints;
@@ -163,7 +269,7 @@ class _MapControlLayer extends StatelessWidget {
               child: Row(
                 children: [
                   _MapFilterChip(
-                    label: 'All',
+                    label: 'communities.filter_all'.tr,
                     icon: Icons.layers_rounded,
                     value: 'all',
                     selected: selected,
@@ -172,7 +278,7 @@ class _MapControlLayer extends StatelessWidget {
                   ),
                   SizedBox(width: AppSize.xs),
                   _MapFilterChip(
-                    label: 'Volunteers',
+                    label: 'coordination.tab_volunteers'.tr,
                     icon: Icons.volunteer_activism_rounded,
                     value: 'volunteer',
                     selected: selected,
@@ -181,7 +287,7 @@ class _MapControlLayer extends StatelessWidget {
                   ),
                   SizedBox(width: AppSize.xs),
                   _MapFilterChip(
-                    label: 'Users',
+                    label: 'map.filter_users'.tr,
                     icon: Icons.person_pin_circle_rounded,
                     value: 'requestee',
                     selected: selected,
@@ -200,13 +306,15 @@ class _MapControlLayer extends StatelessWidget {
   }
 
   String get _statusText {
-    final scope =
-        selected == 'volunteer'
-            ? 'volunteers'
-            : selected == 'requestee'
-            ? 'users'
-            : 'people';
-    return '$visibleCount nearby $scope';
+    final count = '$visibleCount';
+    switch (selected) {
+      case 'volunteer':
+        return 'map.status_volunteers'.trParams({'count': count});
+      case 'requestee':
+        return 'map.status_users'.trParams({'count': count});
+      default:
+        return 'map.status_people'.trParams({'count': count});
+    }
   }
 }
 
@@ -346,7 +454,11 @@ class _ActiveRequestPanel extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isBusy = isCompleting || isCancelling;
     final distanceText =
-        distanceKm == null ? null : '${distanceKm!.toStringAsFixed(2)} km away';
+        distanceKm == null
+            ? null
+            : 'map.distance_away'.trParams(
+                {'distance': '${distanceKm!.toStringAsFixed(2)} km'},
+              );
 
     return Positioned(
       left: AppSize.m,
@@ -411,7 +523,7 @@ class _ActiveRequestPanel extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: isBusy ? null : onChat,
-                    tooltip: 'Chat',
+                    tooltip: 'common.chat'.tr,
                     icon: const Icon(Icons.chat_bubble_outline_rounded),
                     color: AppColors.steelBlue,
                   ),
@@ -440,7 +552,7 @@ class _ActiveRequestPanel extends StatelessWidget {
                                 ),
                               )
                               : const Icon(Icons.close_rounded),
-                      label: Text(isCancelling ? 'Cancelling' : 'Cancel'),
+                      label: Text(isCancelling ? 'map.cancelling'.tr : 'common.cancel'.tr),
                     ),
                   ),
                   SizedBox(width: AppSize.s),
@@ -458,9 +570,28 @@ class _ActiveRequestPanel extends StatelessWidget {
                                 ),
                               )
                               : const Icon(Icons.done_rounded),
-                      label: Text(isCompleting ? 'Completing' : 'Done'),
+                      label: Text(isCompleting ? 'map.completing'.tr : 'map.done'.tr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.reliefGreen,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSize.sH),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          isBusy
+                              ? null
+                              : () => Get.find<MapCntrl>().startLiveTracking(),
+                      icon: const Icon(Icons.navigation, size: 18),
+                      label: Text('map.navigate'.tr),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.steelBlue,
                         foregroundColor: Colors.white,
                       ),
                     ),

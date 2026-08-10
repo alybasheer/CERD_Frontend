@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCrV63j0IC1Xf31BBAuCc7ocNbadbVretc',
-    appId: '1:954241809959:web:0753cc370300122f8a1802',
-    messagingSenderId: '954241809959',
-    projectId: 'cerd-2c2d7',
-    authDomain: 'cerd-2c2d7.firebaseapp.com',
-    storageBucket: 'cerd-2c2d7.firebasestorage.app',
-    measurementId: 'G-84E4W11X1D',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    authDomain: 'cerd-95f4e.firebaseapp.com',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBJ6JO4vMaEuOrygFjEkbtv_YZixD3SlvQ',
-    appId: '1:954241809959:android:1e63b39802c3b7228a1802',
-    messagingSenderId: '954241809959',
-    projectId: 'cerd-2c2d7',
-    storageBucket: 'cerd-2c2d7.firebasestorage.app',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAkstsHBe-a3bE1A6S2qiey0Dqcne3ZRro',
-    appId: '1:954241809959:ios:9079bc479860eb548a1802',
-    messagingSenderId: '954241809959',
-    projectId: 'cerd-2c2d7',
-    storageBucket: 'cerd-2c2d7.firebasestorage.app',
-    iosBundleId: 'com.example.fypSourceCode',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
+    iosClientId: '1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com',
+    iosBundleId: 'com.ghaffar.cerd',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAkstsHBe-a3bE1A6S2qiey0Dqcne3ZRro',
-    appId: '1:954241809959:ios:9079bc479860eb548a1802',
-    messagingSenderId: '954241809959',
-    projectId: 'cerd-2c2d7',
-    storageBucket: 'cerd-2c2d7.firebasestorage.app',
-    iosBundleId: 'com.example.fypSourceCode',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
+    iosClientId: '1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com',
+    iosBundleId: 'com.ghaffar.cerd',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCrV63j0IC1Xf31BBAuCc7ocNbadbVretc',
-    appId: '1:954241809959:web:4a07aadfaae3504a8a1802',
-    messagingSenderId: '954241809959',
-    projectId: 'cerd-2c2d7',
-    authDomain: 'cerd-2c2d7.firebaseapp.com',
-    storageBucket: 'cerd-2c2d7.firebasestorage.app',
-    measurementId: 'G-XZ0SLDZB2P',
+    apiKey: 'AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks',
+    appId: '1:1019157164328:android:516012563946c54f19a01d',
+    messagingSenderId: '1019157164328',
+    projectId: 'cerd-95f4e',
+    authDomain: 'cerd-95f4e.firebaseapp.com',
+    storageBucket: 'cerd-95f4e.firebasestorage.app',
   );
 }

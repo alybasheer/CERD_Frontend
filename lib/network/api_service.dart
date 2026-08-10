@@ -9,14 +9,26 @@ class DioHelper {
   Dio dio = getDio();
   static const _retryDelay = Duration(seconds: 2);
 
+  /// Set to true while the login flow is completing (token saved but
+  /// navigation still in progress).  Prevents the 401 handler from
+  /// wiping the fresh session when a post-login API call (e.g.
+  /// volunteer status check) fails with a stale error.
+  static bool loginInProgress = false;
+
   void _handleErrorResponse(String url, Response response) {
     if (response.statusCode == 404) {
       throw FetchDataExceptions('Endpoint not found: $url');
     }
 
+    // Validation-list responses (NestJS ValidationPipe) are technical and
+    // English-only; collapse them into one friendly, translated message.
+    if (response.data is Map && response.data['message'] is List) {
+      throw BadRequestException('Please check your input and try again.');
+    }
+
     final errorMsg =
         response.data is Map && response.data['message'] != null
-            ? response.data['message'].toString()
+            ? _messageToString(response.data['message'])
             : (response.statusMessage ?? 'Error: ${response.statusCode}');
 
     print(
@@ -26,13 +38,40 @@ class DioHelper {
     if (response.statusCode == 400) {
       throw BadRequestException(errorMsg);
     } else if (response.statusCode == 401) {
-      _handleUnauthorizedSession();
+      // If we're on the login screen, this is a wrong-credentials error —
+      // NOT a session expiry.  Show the backend's actual message ("Invalid
+      // email or password") instead of "Session expired".
+      if (Get.currentRoute == RouteNames.login) {
+        throw BadRequestException(errorMsg);
+      }
+      // During post-login transition (requestee status check running after
+      // token was just saved), don't destroy the fresh session and don't
+      // show "Session expired" — show the actual backend error instead.
+      if (loginInProgress) {
+        throw FetchDataExceptions(errorMsg);
+      }
+      // During app startup, silently redirect to login without a toast.
+      final isStartup = Get.currentRoute == RouteNames.splash ||
+          Get.currentRoute.isEmpty;
+      if (!isStartup) {
+        _handleUnauthorizedSession();
+      } else {
+        StorageHelper().clearSessionData();
+        Future.microtask(() => Get.offAllNamed(RouteNames.login));
+      }
       throw UnauthorizedException(errorMsg);
     }
 
     throw FetchDataExceptions(
       errorMsg,
     ); // removed the prefix so it displays clearly
+  }
+
+  String _messageToString(dynamic message) {
+    if (message is List) {
+      return message.map((e) => e?.toString()).where((e) => e != null && e.isNotEmpty).join('. ');
+    }
+    return message.toString();
   }
 
   void _handleUnauthorizedSession() {

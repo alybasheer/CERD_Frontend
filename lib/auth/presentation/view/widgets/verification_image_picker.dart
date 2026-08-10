@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:get/get.dart';
 
 class VerificationImagePicker extends StatelessWidget {
   final String label;
@@ -118,7 +119,7 @@ class VerificationImagePicker extends StatelessWidget {
                                   child: Text(
                                     fileName?.trim().isNotEmpty == true
                                         ? fileName!.trim()
-                                        : 'Selected image',
+                                        : 'verification.selected_image'.tr,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTextStyling.body_12S.copyWith(
@@ -149,7 +150,7 @@ class VerificationImagePicker extends StatelessWidget {
                         ),
                         AppSize.xsHeight,
                         Text(
-                          'Tap to upload',
+                          'verification.tap_to_upload'.tr,
                           style: AppTextStyling.body_14M.copyWith(
                             color: scheme.primary,
                             fontWeight: FontWeight.w700,
@@ -157,7 +158,7 @@ class VerificationImagePicker extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'JPG or PNG up to 5MB',
+                          'verification.upload_hint'.tr,
                           style: AppTextStyling.body_12S.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),

@@ -4,6 +4,7 @@ import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/empty_state.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
 import 'package:get/get.dart';
 
@@ -17,9 +18,9 @@ class AlertsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: const WeHelpAppBar(
-        title: 'Alerts',
-        subtitle: 'Live safety updates near you',
+      appBar: WeHelpAppBar(
+        title: 'alerts.title'.tr,
+        subtitle: 'alerts.subtitle'.tr,
         showBack: true,
       ),
       body: Obx(() {
@@ -35,13 +36,11 @@ class AlertsScreen extends StatelessWidget {
         }
 
         if (controller.alerts.isEmpty) {
-          return Center(
-            child: Text(
-              'No recent alerts',
-              style: AppTextStyling.body_14M.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+          return EmptyStateView(
+            icon: Icons.notifications_off_rounded,
+            title: 'alerts.no_recent'.tr,
+            subtitle: 'alerts.no_recent_hint'.tr,
+            onRetry: controller.fetchAlerts,
           );
         }
 
@@ -139,17 +138,17 @@ class AlertsScreen extends StatelessWidget {
             children: [
               TextField(
                 controller: controller.titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: 'alerts.create_title'.tr),
               ),
               TextField(
                 controller: controller.descriptionController,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(labelText: 'alerts.create_description'.tr),
               ),
               TextField(
                 controller: controller.locationNameController,
-                decoration: const InputDecoration(labelText: 'Location name'),
+                decoration: InputDecoration(labelText: 'alerts.create_location'.tr),
               ),
               SizedBox(height: AppSize.mH),
               Obx(
@@ -162,7 +161,7 @@ class AlertsScreen extends StatelessWidget {
                             : controller.sendAlert,
                     icon: const Icon(Icons.notifications_active),
                     label: Text(
-                      controller.isSending.value ? 'Sending...' : 'Send Alert',
+                      controller.isSending.value ? 'common.sending'.tr : 'alerts.send_alert'.tr,
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.emergencyRed,

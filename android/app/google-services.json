@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "954241809959",
-    "project_id": "cerd-2c2d7",
-    "storage_bucket": "cerd-2c2d7.firebasestorage.app"
+    "project_number": "1019157164328",
+    "project_id": "cerd-95f4e",
+    "storage_bucket": "cerd-95f4e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:954241809959:android:1e63b39802c3b7228a1802",
+        "mobilesdk_app_id": "1:1019157164328:android:516012563946c54f19a01d",
         "android_client_info": {
-          "package_name": "com.alycodes.cerd"
+          "package_name": "com.ghaffar.cerd"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1019157164328-mf0eugdpmfa3eu96jpt77n2t6js4c81b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ghaffar.cerd",
+            "certificate_hash": "0d479bfa34953086a06a14af2879987e5517bfc3"
+          }
+        },
+        {
+          "client_id": "1019157164328-k3t159fa7pkthaqs6l9i6qi64ojoht48.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBJ6JO4vMaEuOrygFjEkbtv_YZixD3SlvQ"
+          "current_key": "AIzaSyDLpNcRkh5QWe9Hbpcg65UPu67-htjDJks"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1019157164328-k3t159fa7pkthaqs6l9i6qi64ojoht48.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fyp_source_code/localization/language_capsule.dart';
 import 'package:fyp_source_code/splash_onboardings/presentation/controller/onboarding_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
@@ -18,6 +19,10 @@ class OnboardingScreenProfessional extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: LanguageCapsule(),
+            ),
             Expanded(
               child: PageView.builder(
                 controller: controller.pageController,
@@ -78,9 +83,9 @@ class _OnboardingPage extends StatelessWidget {
             ),
             SizedBox(height: 34.h),
             Text(
-              model.title,
+              model.titleKey.toString().tr,
               textAlign: TextAlign.center,
-              style: AppTextStyling.title_30M.copyWith(
+              style: AppTextStyling.title_16M.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w800,
                 height: 1.12,
@@ -88,8 +93,10 @@ class _OnboardingPage extends StatelessWidget {
             ),
             SizedBox(height: 14.h),
             Text(
-              model.description,
+              model.descriptionKey.toString().tr,
               textAlign: TextAlign.center,
+              maxLines: 
+            3,
               style: AppTextStyling.body_14M.copyWith(
                 color: scheme.onSurfaceVariant,
                 height: 1.45,
@@ -153,7 +160,10 @@ class _VisualPanel extends StatelessWidget {
             Positioned(
               bottom: -16,
               left: -12,
-              child: _SoftCircle(size: 72.w, color: color.withValues(alpha: 0.7)),
+              child: _SoftCircle(
+                size: 72.w,
+                color: color.withValues(alpha: 0.7),
+              ),
             ),
             Center(
               child: Container(
@@ -172,11 +182,7 @@ class _VisualPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  _mainIcon,
-                  color: color,
-                  size: 76.sp,
-                ),
+                child: Icon(_mainIcon, color: color, size: 76.sp),
               ),
             ),
             ..._contextBadges(color),
@@ -203,11 +209,11 @@ class _VisualPanel extends StatelessWidget {
 
   List<Widget> _contextBadges(Color color) {
     final badges = <List<dynamic>>[
-      [Icons.sos_rounded, 'SOS'],
-      [Icons.my_location_rounded, 'Live'],
-      [Icons.groups_rounded, 'Team'],
-      [Icons.notifications_active_rounded, 'Alert'],
-      [Icons.check_circle_rounded, 'Ready'],
+      [Icons.sos_rounded, 'onboarding.badge.sos'],
+      [Icons.my_location_rounded, 'onboarding.badge.live'],
+      [Icons.groups_rounded, 'onboarding.badge.team'],
+      [Icons.notifications_active_rounded, 'onboarding.badge.alert'],
+      [Icons.check_circle_rounded, 'onboarding.badge.ready'],
     ];
     final badge = badges[index % badges.length];
 
@@ -217,7 +223,7 @@ class _VisualPanel extends StatelessWidget {
         top: 10,
         child: _MiniBadge(
           icon: badge[0] as IconData,
-          label: badge[1] as String,
+          label: (badge[1] as String).tr,
           color: color,
         ),
       ),
@@ -226,7 +232,7 @@ class _VisualPanel extends StatelessWidget {
         bottom: 10,
         child: _MiniBadge(
           icon: Icons.verified_rounded,
-          label: 'Trusted',
+          label: 'onboarding.badge.trusted'.tr,
           color: AppColors.reliefGreen,
         ),
       ),
@@ -328,25 +334,22 @@ class _OnboardingControls extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              pageCount,
-              (index) {
-                final isActive = index == currentPage;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: EdgeInsets.symmetric(horizontal: 3.w),
-                  width: isActive ? 20.w : 7.w,
-                  height: 7.h,
-                  decoration: BoxDecoration(
-                    color:
-                        isActive
-                            ? AppColors.safetyBlue
-                            : scheme.outline.withValues(alpha: 0.32),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                );
-              },
-            ),
+            children: List.generate(pageCount, (index) {
+              final isActive = index == currentPage;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: EdgeInsets.symmetric(horizontal: 3.w),
+                width: isActive ? 20.w : 7.w,
+                height: 7.h,
+                decoration: BoxDecoration(
+                  color:
+                      isActive
+                          ? AppColors.safetyBlue
+                          : scheme.outline.withValues(alpha: 0.32),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              );
+            }),
           ),
           SizedBox(height: 16.h),
           Row(
@@ -356,14 +359,14 @@ class _OnboardingControls extends StatelessWidget {
                 child: SizedBox(
                   height: 52.h,
                   child: OutlinedButton.icon(
-                onPressed: onSkip,
+                    onPressed: onSkip,
                     icon: Icon(
                       Icons.flash_on_rounded,
                       size: 18.sp,
                       color: AppColors.emergencyRed,
                     ),
                     label: Text(
-                      'Skip to App',
+                      'onboarding.skip'.tr,
                       style: TextStyle(
                         color: AppColors.emergencyRed,
                         fontSize: 14.sp,
@@ -397,7 +400,9 @@ class _OnboardingControls extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      isLastPage ? 'Get Started' : 'Next',
+                      isLastPage
+                          ? 'onboarding.get_started'.tr
+                          : 'common.next'.tr,
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w800,

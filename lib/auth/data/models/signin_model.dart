@@ -40,7 +40,9 @@ class SignupModel {
     final Map<String, dynamic> data = <String, dynamic>{};
     // Send flat structure: username, email, password at root level (backend expects this)
     if (user != null) {
-      data['username'] = user!.username;
+      if (user!.username != null) {
+        data['username'] = user!.username;
+      }
       data['email'] = user!.email;
       data['password'] = user!.password;
       if (user!.role != null) {

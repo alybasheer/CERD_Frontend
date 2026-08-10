@@ -18,6 +18,7 @@ import 'package:fyp_source_code/volunteer_side/map/presentation/view/map_screen.
 import 'package:fyp_source_code/volunteer_side/volunteer_verification/presentation/view/admin_verification_screen.dart';
 import 'package:fyp_source_code/volunteer_side/profile/presentation/view/profile_screen.dart';
 import 'package:fyp_source_code/request_side/home/presentation/view/request_home_screen.dart';
+import 'package:fyp_source_code/request_side/home/presentation/view/tracking_map_screen.dart';
 import 'package:get/get.dart';
 
 class RoutePaths {
@@ -112,6 +113,13 @@ class RoutePaths {
       name: RouteNames.requestHome,
       page: () => const RequestHomeScreen(),
       middlewares: [_requestSideGuard],
+    ),
+
+    // TRACKING SCREENS
+    GetPage(
+      name: RouteNames.trackingMap,
+      page: () => const TrackingMapScreen(),
+      middlewares: [_authGuard],
     ),
 
     // ADMIN SCREENS

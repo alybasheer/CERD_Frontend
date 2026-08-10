@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:fyp_source_code/request_side/create_help_request/data/model/help_request.dart';
+import 'package:fyp_source_code/request_side/home/presentation/controller/tracking_controller.dart';
+import 'package:fyp_source_code/routing/route_names.dart';
 import 'package:get/get.dart';
 import 'package:fyp_source_code/request_side/home/presentation/controller/request_home_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/app_bar.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/app_bottom_nav.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/app_version_badge.dart';
 import 'package:fyp_source_code/utilities/reuse_widgets/shimmer_loading.dart';
+import 'package:latlong2/latlong.dart';
 
 class RequestHomeScreen extends StatelessWidget {
   const RequestHomeScreen({super.key});
@@ -19,8 +27,14 @@ class RequestHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: const WeHelpAppBar(
-        title: 'Request Home',
-        subtitle: 'Nearby volunteers and emergency help',
+        title: 'request.home.title',
+        subtitle: 'request.home.subtitle',
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: AppVersionBadge(light: true)),
+          ),
+        ],
       ),
       body: Obx(
         () => RefreshIndicator(
@@ -28,7 +42,7 @@ class RequestHomeScreen extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.all(AppSize.m),
             children: [
-              _SectionTitle(title: 'Nearby Active Volunteers'),
+              _SectionTitle(title: 'request.home.nearby'.tr),
               SizedBox(height: AppSize.sH),
               if (controller.isLoading.value)
                 AppShimmer(
@@ -43,12 +57,14 @@ class RequestHomeScreen extends StatelessWidget {
                   ),
                 )
               else if (controller.nearbyVolunteers.isEmpty)
-                _EmptyBox(text: 'No active volunteers nearby right now.')
+                _EmptyBox(text: 'request.home.nearby.empty'.tr)
               else
                 ...controller.nearbyVolunteers.map(_VolunteerTile.new),
+              _SosStatusSection(controller: controller),
+              _TrackingMapSection(controller: controller.trackingController),
               if (controller.activeRequests.isNotEmpty) ...[
                 SizedBox(height: AppSize.lH),
-                _SectionTitle(title: 'My Active Requests'),
+                _SectionTitle(title: 'request.home.active_requests'.tr),
                 SizedBox(height: AppSize.sH),
                 ...controller.activeRequests.map(
                   (request) => _RequestTile(
@@ -65,10 +81,630 @@ class RequestHomeScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _SosEmergencyBar(controller: controller),
-          _RequestBottomNavBar(controller: controller),
+          AppBottomNav(
+            currentIndex: 0,
+            items: [
+              BottomNavItem(
+                icon: Icons.home_rounded,
+                label: 'common.home'.tr,
+                onTap: () {},
+              ),
+              BottomNavItem(
+                icon: Icons.notifications_active_rounded,
+                label: 'common.alerts'.tr,
+                onTap: controller.openAlerts,
+              ),
+              BottomNavItem(
+                icon: Icons.add_circle_outline_rounded,
+                label: 'common.help'.tr,
+                onTap: controller.openRequestHelpSheet,
+              ),
+              BottomNavItem(
+                icon: Icons.people_alt_rounded,
+                label: 'common.coordination'.tr,
+                onTap: controller.openCoordination,
+              ),
+              BottomNavItem(
+                icon: Icons.person_rounded,
+                label: 'common.profile'.tr,
+                onTap: controller.openProfile,
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+}
+
+class _SosStatusSection extends StatelessWidget {
+  final RequestHomeController controller;
+
+  const _SosStatusSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final request = controller.activeRequests
+        .where((r) => r.isSos && _isOpenSosStatus(r))
+        .firstOrNull;
+    if (request == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: AppSize.sH, bottom: AppSize.sH),
+      child: _SosStatusCard(
+        request: request,
+        onCallHelpline: controller.openHelplineSheet,
+        onCancel: () => controller.cancelActiveSos(request),
+        controller: controller,
+      ),
+    );
+  }
+
+  static bool _isOpenSosStatus(HelpRequest request) {
+    final status = request.status?.toLowerCase().trim() ?? '';
+    return status == 'open' || status == 'active' || status == 'pending';
+  }
+}
+
+class _SosStatusCard extends StatefulWidget {
+  final HelpRequest request;
+  final VoidCallback onCallHelpline;
+  final VoidCallback onCancel;
+  final RequestHomeController controller;
+
+  const _SosStatusCard({
+    required this.request,
+    required this.onCallHelpline,
+    required this.onCancel,
+    required this.controller,
+  });
+
+  @override
+  State<_SosStatusCard> createState() => _SosStatusCardState();
+}
+
+class _SosStatusCardState extends State<_SosStatusCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String get _elapsed {
+    final created = DateTime.tryParse(widget.request.createdAt ?? '');
+    if (created == null) return '';
+    final diff = DateTime.now().difference(created);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+    return '${diff.inHours} hr ${diff.inMinutes % 60} min ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notified = widget.request.notifiedCount;
+
+    return Container(
+      padding: EdgeInsets.all(AppSize.m),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.emergencyRed,
+            AppColors.emergencyRed.withValues(alpha: 0.78),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.emergencyRed.withValues(alpha: 0.30),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.sos, color: Colors.white, size: 26),
+              SizedBox(width: AppSize.s),
+              Text(
+                'sos.status.active'.tr,
+                style: AppTextStyling.title_16M.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _elapsed,
+                style: AppTextStyling.body_12S.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSize.sH),
+          Text(
+            notified != null && notified > 0
+                ? 'sos.status.notified_count'.trParams({
+                    'count': '$notified',
+                  })
+                : 'sos.status.notified'.tr,
+            style: AppTextStyling.body_14M.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppSize.sH),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: widget.onCallHelpline,
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+                  label: Text('common.helpline'.tr),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSize.s),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: widget.onCancel,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: Text('sos.cancel'.tr),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSize.sH),
+          _SosSnoozeRow(widget.controller),
+        ],
+      ),
+    );
+  }
+}
+
+class _SosSnoozeRow extends StatefulWidget {
+  final RequestHomeController controller;
+
+  const _SosSnoozeRow(this.controller);
+
+  @override
+  State<_SosSnoozeRow> createState() => _SosSnoozeRowState();
+}
+
+class _SosSnoozeRowState extends State<_SosSnoozeRow> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  void _pickSnoozeDuration() {
+    final theme = Get.context?.theme;
+    Get.bottomSheet(
+      Material(
+        color: theme?.colorScheme.surface ?? Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSize.m),
+                child: Center(
+                  child: Text(
+                    'sos.snooze.title'.tr,
+                    style: AppTextStyling.title_16M.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ..._snoozeOptions.map(
+                (entry) => ListTile(
+                  leading: const Icon(Icons.bedtime_rounded),
+                  title: Text('sos.snooze.option'.trParams({'min': entry.label})),
+                  subtitle: Text(
+                    entry.duration == const Duration(minutes: 5)
+                        ? 'sos.snooze.recommended'.tr
+                        : 'sos.snooze.pause_hint'.tr,
+                  ),
+                  trailing: const Icon(Icons.alarm_off_rounded, size: 20),
+                  onTap: () {
+                    Get.back();
+                    widget.controller.snoozeSos(entry.duration);
+                  },
+                ),
+              ),
+              SizedBox(height: AppSize.mH),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      barrierColor: const Color(0x99000000),
+    );
+  }
+
+  static const _snoozeOptions = [
+    _Snooze('5 min', Duration(minutes: 5)),
+    _Snooze('15 min', Duration(minutes: 15)),
+    _Snooze('30 min', Duration(minutes: 30)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.controller.isSosSnoozed) {
+      return Row(
+        children: [
+          Expanded(
+            child: Chip(
+              avatar: const Icon(
+                Icons.bedtime_rounded,
+                size: 18,
+                color: AppColors.emergencyRed,
+              ),
+              label: Text(
+                'sos.snooze.paused'.trParams({'time': widget.controller.snoozeLabel}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              backgroundColor: Colors.white,
+              labelStyle: const TextStyle(
+                color: AppColors.emergencyRed,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+          SizedBox(width: AppSize.s),
+          TextButton.icon(
+            onPressed: widget.controller.clearSnooze,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: Text('sos.snooze.resume'.tr),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+          ),
+        ],
+      );
+    }
+
+    return Align(
+      alignment: Alignment.center,
+      child: TextButton.icon(
+        onPressed: _pickSnoozeDuration,
+        icon: const Icon(Icons.bedtime_rounded, size: 18),
+        label: Text('sos.snooze'.tr),
+        style: TextButton.styleFrom(foregroundColor: Colors.white),
+      ),
+    );
+  }
+}
+
+class _Snooze {
+  final String label;
+  final Duration duration;
+
+  const _Snooze(this.label, this.duration);
+}
+
+class _TrackingMapSection extends StatefulWidget {
+  final TrackingController controller;
+
+  const _TrackingMapSection({required this.controller});
+
+  @override
+  State<_TrackingMapSection> createState() => _TrackingMapSectionState();
+}
+
+class _TrackingMapSectionState extends State<_TrackingMapSection> {
+  final MapController _mapController = MapController();
+  String? _lastCameraKey;
+  double _followedZoom = 16;
+
+  TrackingController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    ever(controller.volunteerPosition, _onPositionChanged);
+    ever(controller.routePoints, (_) => _fitMap());
+    ever(controller.destination, (_) => _fitMap());
+  }
+
+  void _onPositionChanged(LatLng? pos) {
+    if (pos != null) _followCamera(pos);
+  }
+
+  /// Follow the volunteer along the road: keep the marker centered at a
+  /// distance-aware zoom so the destination stays on screen, and do not
+  /// re-zoom on every tiny GPS jitter.
+  void _followCamera(LatLng pos) {
+    final route = controller.routePoints;
+    if (route.length < 2) {
+      _fitMap();
+      return;
+    }
+    final destination = route.last;
+    final distM = const Distance().as(LengthUnit.Meter, pos, destination);
+    final zoom = _zoomForDistance(distM);
+    final key =
+        '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
+    if (key == _lastCameraKey && _followedZoom == zoom) return;
+    _lastCameraKey = key;
+    _followedZoom = zoom;
+    try {
+      _mapController.move(pos, zoom);
+    } catch (_) {
+      _lastCameraKey = null;
+    }
+  }
+
+  double _zoomForDistance(double meters) {
+    if (meters < 1500) return 16;
+    if (meters < 5000) return 15;
+    if (meters < 12000) return 13.5;
+    return 12.5;
+  }
+
+  void _fitMap() {
+    final vol = controller.volunteerPosition.value;
+    final dest = controller.destination.value;
+    final all = [vol, dest].whereType<LatLng>().toList();
+    if (all.length < 2) {
+      if (all.isNotEmpty) {
+        try {
+          _mapController.move(all.first, 15);
+        } catch (_) {
+          _lastCameraKey = null;
+        }
+      }
+      return;
+    }
+    final key = all
+        .map(
+          (p) =>
+              '${p.latitude.toStringAsFixed(4)},${p.longitude.toStringAsFixed(4)}',
+        )
+        .join(':');
+    if (key == _lastCameraKey) return;
+    _lastCameraKey = key;
+    try {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: all,
+          padding: const EdgeInsets.fromLTRB(48, 48, 48, 96),
+          maxZoom: 17,
+        ),
+      );
+    } catch (_) {
+      _lastCameraKey = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (!controller.isTracking.value) return const SizedBox.shrink();
+
+      final volPos = controller.volunteerPosition.value;
+      final destination = controller.destination.value;
+      final dist = controller.remainingDistanceKm.value;
+      final eta = controller.remainingMinutes.value;
+      final status = controller.trackingStatus.value;
+      final route = controller.routePoints;
+      final traveled = controller.traveledPoints;
+
+      return Container(
+        height: 260,
+        margin: EdgeInsets.only(bottom: AppSize.sH),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor),
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 32,
+              padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+              decoration: BoxDecoration(
+                color:
+                    status == 'arrived'
+                        ? AppColors.reliefGreen.withValues(alpha: 0.12)
+                        : AppColors.steelBlue.withValues(alpha: 0.10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    status == 'arrived'
+                        ? Icons.check_circle
+                        : Icons.location_on,
+                    size: 16,
+                    color:
+                        status == 'arrived'
+                            ? AppColors.reliefGreen
+                            : AppColors.steelBlue,
+                  ),
+                  SizedBox(width: AppSize.xs),
+                  Text(
+                    status == 'arrived'
+                        ? 'Volunteer arrived'
+                        : 'Volunteer en route',
+                    style: AppTextStyling.body_12S.copyWith(
+                      color:
+                          status == 'arrived'
+                              ? AppColors.reliefGreen
+                              : AppColors.steelBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Spacer(),
+                  if (dist != null)
+                    Text(
+                      '${dist.toStringAsFixed(1)} km',
+                      style: AppTextStyling.body_12S.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (eta != null) ...[
+                    SizedBox(width: AppSize.xs),
+                    Text(
+                      '~$eta min',
+                      style: AppTextStyling.body_12S.copyWith(
+                        color: AppColors.mediumGray,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              height: 32,
+              padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => Get.toNamed(RouteNames.trackingMap),
+                    icon: const Icon(Icons.fullscreen, size: 16),
+                    label: Text('sos.tracking.view_map'.tr),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.steelBlue,
+                      padding: EdgeInsets.symmetric(horizontal: AppSize.s),
+                      textStyle: AppTextStyling.body_12S.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter:
+                      volPos ?? destination ?? const LatLng(31.52, 74.35),
+                  initialZoom: volPos != null ? 16 : 14,
+                  minZoom: 1,
+                  maxZoom: 19,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.fyp.volunteer_emergency_network',
+                  ),
+                  if (route.length >= 2)
+                    PolylineLayer(
+                      polylines: <Polyline<Object>>[
+                        Polyline<Object>(
+                          points: route,
+                          strokeWidth: 5,
+                          color: AppColors.steelBlue.withValues(alpha: 0.6),
+                          borderStrokeWidth: 2,
+                          borderColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                  if (traveled.length >= 2)
+                    PolylineLayer(
+                      polylines: <Polyline<Object>>[
+                        Polyline<Object>(
+                          points: traveled,
+                          strokeWidth: 4,
+                          color: AppColors.mediumGray.withValues(alpha: 0.5),
+                          borderStrokeWidth: 1,
+                          borderColor: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      if (volPos != null)
+                        Marker(
+                          point: volPos,
+                          width: 28,
+                          height: 28,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.reliefGreen,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.reliefGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (destination != null)
+                        Marker(
+                          point: destination,
+                          width: 24,
+                          height: 24,
+                          child: Icon(
+                            Icons.location_on,
+                            color: AppColors.emergencyRed,
+                            size: 28,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -90,11 +726,51 @@ class _SosEmergencyBar extends StatelessWidget {
       child: Obx(() {
         final isSending = controller.isSendingSos.value;
 
-        return _SosPulseButton(
-          isSending: isSending,
-          onPressed: isSending ? null : controller.sendSos,
+        return Row(
+          children: [
+            Expanded(
+              child: _SosPulseButton(
+                isSending: isSending,
+                onPressed: isSending ? null : controller.sendSos,
+              ),
+            ),
+            SizedBox(width: AppSize.s),
+            _HelplineButton(onTap: controller.openHelplineSheet),
+          ],
         );
       }),
+    );
+  }
+}
+
+class _HelplineButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HelplineButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 104,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+        label: Text('common.helpline'.tr),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.steelBlue,
+          side: BorderSide(
+            color: AppColors.steelBlue.withValues(alpha: 0.4),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          textStyle: AppTextStyling.body_12S.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -231,7 +907,9 @@ class _SosPulseButtonState extends State<_SosPulseButton>
                           ),
                         SizedBox(width: AppSize.xs),
                         Text(
-                          widget.isSending ? 'Sending SOS' : 'SOS Emergency',
+                          widget.isSending
+                              ? 'request.home.sending_sos'.tr
+                              : 'request.home.sos'.tr,
                           style: AppTextStyling.body_14M.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -247,116 +925,6 @@ class _SosPulseButtonState extends State<_SosPulseButton>
           ],
         );
       },
-    );
-  }
-}
-
-class _RequestBottomNavBar extends StatelessWidget {
-  final RequestHomeController controller;
-
-  const _RequestBottomNavBar({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSize.s, vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: 'Home',
-                isActive: true,
-                onTap: () {},
-              ),
-              _NavItem(
-                icon: Icons.notifications_active_rounded,
-                label: 'Alerts',
-                isActive: false,
-                onTap: controller.openAlerts,
-              ),
-              _NavItem(
-                icon: Icons.add_circle_outline_rounded,
-                label: 'Help',
-                isActive: false,
-                onTap: controller.openRequestHelpSheet,
-              ),
-              _NavItem(
-                icon: Icons.people_alt_rounded,
-                label: 'Coordination',
-                isActive: false,
-                onTap: controller.openCoordination,
-              ),
-              _NavItem(
-                icon: Icons.person_rounded,
-                label: 'Profile',
-                isActive: false,
-                onTap: controller.openProfile,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isActive ? AppColors.steelBlue : AppColors.mediumGray,
-                size: 26,
-              ),
-              SizedBox(height: AppSize.xsH),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyling.body_12S.copyWith(
-                  color: isActive ? AppColors.steelBlue : AppColors.mediumGray,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -390,7 +958,10 @@ class _VolunteerTile extends StatelessWidget {
       iconColor: AppColors.reliefGreen,
       title: volunteer.name,
       subtitle: volunteer.expertise,
-      trailing: '${volunteer.rating.toStringAsFixed(1)} rating',
+      trailing:
+          '${volunteer.ratingAverage.toStringAsFixed(1)} • '
+          '${volunteer.ratingCount} '
+          '${volunteer.ratingCount == 1 ? 'common.rating'.tr : 'common.ratings'.tr}',
     );
   }
 }
@@ -414,7 +985,7 @@ class _RequestTile extends StatelessWidget {
       iconColor: request.isSos ? AppColors.emergencyRed : AppColors.steelBlue,
       title: request.displayTitle,
       subtitle: request.displayLocation,
-      trailing: request.status ?? 'active',
+      trailing: request.status ?? 'common.active'.tr,
       action:
           canChat
               ? Align(
@@ -425,7 +996,7 @@ class _RequestTile extends StatelessWidget {
                   label: Text(
                     request.acceptedByName == null ||
                             request.acceptedByName!.trim().isEmpty
-                        ? 'Chat volunteer'
+                        ? 'request.home.chat_volunteer'.tr
                         : 'Chat ${request.acceptedByName}',
                   ),
                 ),

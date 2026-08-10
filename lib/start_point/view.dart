@@ -1,113 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_source_code/communities/presentation/view/communities_screen.dart';
 import 'package:fyp_source_code/start_point/veiw_cntrl.dart';
-import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
-import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
-import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
+import 'package:fyp_source_code/utilities/reuse_widgets/app_bottom_nav.dart';
 import 'package:fyp_source_code/volunteer_side/home/presentation/view/home_screen.dart';
 import 'package:fyp_source_code/volunteer_side/map/presentation/view/map_screen.dart';
 import 'package:fyp_source_code/volunteer_side/profile/presentation/view/profile_screen.dart';
 import 'package:get/get.dart';
 
-class StartPoint extends StatelessWidget {
+class StartPoint extends StatefulWidget {
   const StartPoint({super.key});
 
-  List<Widget> get pages => [
-    const HomeScreen(),
-    MapScreen(),
-    const CommunitiesScreen(),
-    const ProfileScreen(),
-  ];
+  @override
+  State<StartPoint> createState() => _StartPointState();
+}
+
+class _StartPointState extends State<StartPoint> {
+  /// Tabs are built lazily on first visit but kept alive afterwards
+  /// (IndexedStack), so real-time listeners (new help requests, tracking)
+  /// keep running no matter which tab is visible.
+  final List<Widget?> _builtPages = List<Widget?>.filled(4, null);
+
+  Widget _page(int index) {
+    return _builtPages[index] ??= switch (index) {
+      0 => const HomeScreen(),
+      1 => MapScreen(),
+      2 => const CommunitiesScreen(),
+      3 => const ProfileScreen(),
+      _ => const SizedBox.shrink(),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final entryVeiwCntrl = Get.put(EntryViewCntrl());
     return Obx(
-      () => Scaffold(
-        body: pages[entryVeiwCntrl.currentIndex.value],
-        bottomNavigationBar: _buildBottomNavBar(entryVeiwCntrl),
-      ),
-    );
-  }
-
-  static Widget _buildBottomNavBar(EntryViewCntrl controller) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
+      () {
+        final index = entryVeiwCntrl.currentIndex.value;
+        return Scaffold(
+          body: IndexedStack(
+            index: index,
+            children: [
+              for (int i = 0; i < _builtPages.length; i++) _page(i),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: AppSize.mH,
-          top: AppSize.sH,
-          left: AppSize.m,
-          right: AppSize.m,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navBarItem(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              isActive: controller.currentIndex.value == 0,
-              onTap: () => controller.setIndex(0),
-            ),
-            _navBarItem(
-              icon: Icons.map_rounded,
-              label: 'Map',
-              isActive: controller.currentIndex.value == 1,
-              onTap: () => controller.setIndex(1),
-            ),
-            _navBarItem(
-              icon: Icons.groups_rounded,
-              label: 'Community',
-              isActive: controller.currentIndex.value == 2,
-              onTap: () => controller.setIndex(2),
-            ),
-            _navBarItem(
-              icon: Icons.person_rounded,
-              label: 'Profile',
-              isActive: controller.currentIndex.value == 3,
-              onTap: () => controller.setIndex(3),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget _navBarItem({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? AppColors.steelBlue : AppColors.mediumGray,
-            size: 28,
+          bottomNavigationBar: AppBottomNav(
+            currentIndex: index,
+            items: [
+              BottomNavItem(
+                icon: Icons.home_rounded,
+                label: 'common.home'.tr,
+                onTap: () => entryVeiwCntrl.setIndex(0),
+              ),
+              BottomNavItem(
+                icon: Icons.map_rounded,
+                label: 'common.map'.tr,
+                onTap: () => entryVeiwCntrl.setIndex(1),
+              ),
+              BottomNavItem(
+                icon: Icons.groups_rounded,
+                label: 'common.community'.tr,
+                onTap: () => entryVeiwCntrl.setIndex(2),
+              ),
+              BottomNavItem(
+                icon: Icons.person_rounded,
+                label: 'common.profile'.tr,
+                onTap: () => entryVeiwCntrl.setIndex(3),
+              ),
+            ],
           ),
-          SizedBox(height: AppSize.xsH),
-          Text(
-            label,
-            style: AppTextStyling.body_12S.copyWith(
-              color: isActive ? AppColors.steelBlue : AppColors.mediumGray,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

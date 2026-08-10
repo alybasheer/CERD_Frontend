@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp_source_code/localization/locale_controller.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_colors.dart';
 import 'package:fyp_source_code/utilities/reuse_components/app_text.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
@@ -91,7 +93,7 @@ class ProfileHero extends StatelessWidget {
                 Expanded(
                   child: _HeroInfo(
                     icon: Icons.verified_user_rounded,
-                    label: 'Status',
+                    label: 'profile.status'.tr,
                     value: controller.statusLabel,
                   ),
                 ),
@@ -99,12 +101,20 @@ class ProfileHero extends StatelessWidget {
                 Expanded(
                   child: _HeroInfo(
                     icon: Icons.location_on_rounded,
-                    label: 'Location',
+                    label: 'profile.location'.tr,
                     value: controller.profileLocation.value,
                   ),
                 ),
               ],
             ),
+            if (controller.isVolunteer) ...[
+              SizedBox(height: AppSize.s),
+              _HeroInfo(
+                icon: Icons.star_rounded,
+                label: 'profile.rating'.tr,
+                value: controller.ratingSummary,
+              ),
+            ],
           ],
         ),
       ),
@@ -120,20 +130,20 @@ class ProfileAccountSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSection(
-      title: 'Account Details',
+      title: 'profile.account_details'.tr,
       icon: Icons.badge_rounded,
       child: Column(
         children: [
           _ProfileTextField(
             controller: controller.nameController,
-            label: 'Full name',
+            label: 'profile.full_name'.tr,
             icon: Icons.person_rounded,
             textInputAction: TextInputAction.next,
           ),
           SizedBox(height: AppSize.mH),
           _ProfileTextField(
             controller: controller.emailController,
-            label: 'Email',
+            label: 'profile.email'.tr,
             icon: Icons.email_rounded,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -141,7 +151,7 @@ class ProfileAccountSection extends StatelessWidget {
           SizedBox(height: AppSize.mH),
           _ProfileTextField(
             controller: controller.locationController,
-            label: 'Location',
+            label: 'profile.location'.tr,
             icon: Icons.location_on_rounded,
             textInputAction: TextInputAction.done,
           ),
@@ -165,8 +175,8 @@ class ProfileAccountSection extends StatelessWidget {
                             : const Icon(Icons.my_location_rounded),
                     label: Text(
                       controller.isResolvingLocation.value
-                          ? 'Finding'
-                          : 'Use Current',
+                          ? 'profile.finding'.tr
+                          : 'profile.use_current'.tr,
                     ),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 46),
@@ -203,7 +213,11 @@ class ProfileAccountSection extends StatelessWidget {
                               ),
                             )
                             : const Icon(Icons.save_rounded),
-                    label: Text(controller.isSaving.value ? 'Saving' : 'Save'),
+                    label: Text(
+                      controller.isSaving.value
+                          ? 'common.saving'.tr
+                          : 'common.save'.tr,
+                    ),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(0, 46),
                       backgroundColor: AppColors.safetyBlue,
@@ -234,26 +248,29 @@ class ProfileQuickActions extends StatelessWidget {
     return Obx(() {
       final actions = <_ProfileAction>[
         _ProfileAction(
-          label: controller.isVolunteer ? 'Volunteer Home' : 'Request Home',
+          label:
+              controller.isVolunteer
+                  ? 'profile.volunteer_home'.tr
+                  : 'profile.request_home'.tr,
           icon: Icons.home_rounded,
           color: AppColors.safetyBlue,
           onTap: controller.openPrimaryWorkspace,
         ),
         _ProfileAction(
-          label: 'Alerts',
+          label: 'common.alerts'.tr,
           icon: Icons.notifications_active_rounded,
           color: AppColors.emergencyRed,
           onTap: controller.openAlerts,
         ),
         _ProfileAction(
-          label: 'Coordination',
+          label: 'common.coordination'.tr,
           icon: Icons.people_alt_rounded,
           color: AppColors.steelBlue,
           onTap: controller.openCoordination,
         ),
         if (controller.isVolunteer)
           _ProfileAction(
-            label: 'Communities',
+            label: 'profile.communities'.tr,
             icon: Icons.groups_rounded,
             color: AppColors.reliefGreen,
             onTap: controller.openCommunities,
@@ -261,7 +278,7 @@ class ProfileQuickActions extends StatelessWidget {
       ];
 
       return _ProfileSection(
-        title: 'Quick Actions',
+        title: 'profile.quick_actions'.tr,
         icon: Icons.grid_view_rounded,
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -289,32 +306,133 @@ class ProfilePreferencesSection extends StatelessWidget {
 
   const ProfilePreferencesSection({super.key, required this.controller});
 
+  void _showLanguageChooser(
+    BuildContext context,
+    LocaleController localeController,
+  ) {
+    final theme = Theme.of(context);
+    Get.bottomSheet(
+      Material(
+        color: theme.colorScheme.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    'language.choose'.tr,
+                    style: AppTextStyling.title_16M.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.language_rounded),
+                title: Text('language.en'.tr),
+                trailing: localeController.isUrdu
+                    ? null
+                    : const Icon(Icons.check_rounded, color: AppColors.safetyBlue),
+                onTap: () {
+                  Get.back();
+                  if (localeController.isUrdu) {
+                    localeController.toggleLanguage();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.translate_rounded),
+                title: Text('language.ur'.tr),
+                trailing: localeController.isUrdu
+                    ? const Icon(Icons.check_rounded, color: AppColors.safetyBlue)
+                    : null,
+                onTap: () {
+                  Get.back();
+                  if (!localeController.isUrdu) {
+                    localeController.toggleLanguage();
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+            ),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _ProfileSection(
-      title: 'Preferences',
+      title: 'profile.preferences'.tr,
       icon: Icons.tune_rounded,
-      child: Obx(
-        () => SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          secondary: Icon(
-            controller.isSwitching.value
-                ? Icons.dark_mode_rounded
-                : Icons.light_mode_rounded,
-            color: AppColors.safetyBlue,
-          ),
-          title: Text(
-            'Dark mode',
-            style: AppTextStyling.body_14M.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
+      child: Obx(() {
+        final localeController =
+            Get.isRegistered<LocaleController>()
+                ? Get.find<LocaleController>()
+                : Get.put(LocaleController());
+
+        return Column(
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(
+                controller.isSwitching.value
+                    ? Icons.dark_mode_rounded
+                    : Icons.light_mode_rounded,
+                color: AppColors.safetyBlue,
+              ),
+              title: Text(
+                'profile.dark_mode'.tr,
+                style: AppTextStyling.body_14M.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              value: controller.isSwitching.value,
+              activeThumbColor: AppColors.safetyBlue,
+              onChanged: controller.onSwitch,
             ),
-          ),
-          value: controller.isSwitching.value,
-          activeThumbColor: AppColors.safetyBlue,
-          onChanged: controller.onSwitch,
-        ),
-      ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.language_rounded,
+                color: AppColors.safetyBlue,
+              ),
+              title: Text(
+                'language.label'.tr,
+                style: AppTextStyling.body_14M.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: Text(
+                localeController.isUrdu
+                    ? 'language.ur'.tr
+                    : 'language.en'.tr,
+                style: AppTextStyling.body_12S.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showLanguageChooser(context, localeController),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
@@ -325,13 +443,13 @@ class ProfilePolicySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSection(
-      title: 'Privacy',
+      title: 'profile.privacy'.tr,
       icon: Icons.policy_rounded,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: const Icon(Icons.lock_rounded, color: AppColors.safetyBlue),
         title: Text(
-          'Data and permissions',
+          'profile.data_permissions'.tr,
           style: AppTextStyling.body_14M.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w700,
@@ -402,7 +520,7 @@ class ProfilePolicySection extends StatelessWidget {
                         SizedBox(width: AppSize.s),
                         Expanded(
                           child: Text(
-                            'Data and permissions',
+                            'profile.data_permissions'.tr,
                             style: AppTextStyling.title_18M.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w800,
@@ -412,23 +530,33 @@ class ProfilePolicySection extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: AppSize.mH),
+                    Text(
+                      'profile.data_permissions.intro'.tr,
+                      style: AppTextStyling.body_14M.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: AppSize.lH),
                     _PolicyLine(
                       icon: Icons.key_rounded,
-                      title: 'Session access',
-                      text:
-                          'Your login token is stored locally on this device so you stay signed in.',
+                      title: 'profile.session_access'.tr,
+                      text: 'profile.session_access.text'.tr,
                     ),
                     _PolicyLine(
                       icon: Icons.location_on_rounded,
-                      title: 'Location use',
-                      text:
-                          'Location is requested only for nearby requests, volunteers, maps, alerts, and help coordination.',
+                      title: 'profile.location_use'.tr,
+                      text: 'profile.location_use.text'.tr,
+                    ),
+                    _PolicyLine(
+                      icon: Icons.notifications_rounded,
+                      title: 'profile.notifications'.tr,
+                      text: 'profile.notifications.text'.tr,
                     ),
                     _PolicyLine(
                       icon: Icons.palette_rounded,
-                      title: 'Preferences',
-                      text:
-                          'Theme and onboarding preferences stay on this device and are used only to personalize the app.',
+                      title: 'profile.preferences'.tr,
+                      text: 'profile.preferences.text'.tr,
                     ),
                     SizedBox(height: AppSize.sH),
                     SizedBox(
@@ -444,7 +572,7 @@ class ProfilePolicySection extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Got it'),
+                        child: Text('common.got_it'.tr),
                       ),
                     ),
                   ],
@@ -470,7 +598,7 @@ class ProfileSignOutSection extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: controller.signOut,
         icon: const Icon(Icons.logout_rounded),
-        label: const Text('Sign out'),
+        label: Text('profile.sign_out'.tr),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.emergencyRed,
           foregroundColor: AppColors.pureWhite,
@@ -830,7 +958,7 @@ ImageProvider? _resolveAvatar(String? imageUrl) {
   }
   if (value.startsWith('http')) {
     final token = StorageHelper().readData('token')?.toString().trim();
-    return NetworkImage(
+    return CachedNetworkImageProvider(
       value,
       headers:
           token == null || token.isEmpty

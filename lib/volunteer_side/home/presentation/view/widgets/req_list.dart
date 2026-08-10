@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:fyp_source_code/utilities/reuse_components/spacing.dart';
 import 'package:fyp_source_code/utilities/reuse_components/storage_helper.dart';
 import 'package:fyp_source_code/volunteer_side/home/presentation/view/widgets/req_card.dart';
@@ -28,8 +30,9 @@ Widget requestsListSection(
           requestImage: image,
           mediaUrls: request.displayMediaUrls,
           title: request.displayTitle,
-          description: request.description ?? 'No description provided.',
+          description: request.description ?? 'request.card.no_description'.tr,
           location: request.displayLocation,
+          isSos: request.isSos,
           isAccepting: acceptingIds.contains(request.sId),
           onAccept: () => onAccept(request),
         ),
@@ -43,7 +46,7 @@ ImageProvider? _resolveImage(String? imageUrl) {
     return null;
   }
   if (imageUrl.startsWith('http')) {
-    return NetworkImage(imageUrl, headers: _authHeaders());
+    return CachedNetworkImageProvider(imageUrl, headers: _authHeaders());
   }
   if (imageUrl.startsWith('assets/')) {
     return AssetImage(imageUrl);
